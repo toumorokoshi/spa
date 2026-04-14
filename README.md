@@ -8,6 +8,18 @@ single-page-application that serves a particular purpose.
 Although each subdirectory under `src/` is its own application, the whole
 project is compiled as a single package and served via GitHub Pages.
 
+## Requirements
+
+- **Local-only at runtime:** Each SPA must work without contacting third-party
+  origins while you use it. Do not load scripts, stylesheets, fonts, or data from
+  external URLs in the built app; ship everything needed via the Vite bundle and
+  static assets under `public/` (or the app directory). Do not call remote APIs
+  from app code unless there is an explicit, documented exception.
+- **Offline after a successful load:** Once a page and its assets have been
+  loaded over the network, using the app should not require further network
+  access. (Repeat visits while fully offline depend on the browser’s HTTP cache;
+  this project does not ship a service worker.)
+
 ## Tech Stack
 
 - **[Preact](https://preactjs.com/)** — lightweight JSX component framework
