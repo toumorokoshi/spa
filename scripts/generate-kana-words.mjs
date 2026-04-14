@@ -1,7 +1,9 @@
 /**
- * Downloads Hermit Dave's Japanese frequency list (MIT) and writes kana-only
- * words (length >= 2) in frequency order. Regenerate with:
- *   node scripts/generate-kana-words.mjs
+ * Downloads Hermit Dave's Japanese frequency list (MIT), collects every
+ * unique kana-only token (length >= 2), then sorts with the Japanese locale
+ * so the bundled list spans the syllabary evenly (not only high-frequency
+ * early-rank forms). Regenerate with:
+ *   npm run generate:words
  */
 import { writeFileSync } from 'fs';
 import { dirname, join } from 'path';
@@ -10,7 +12,6 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const LIST_URL =
   'https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/ja/ja_full.txt';
-const TARGET_COUNT = 3500;
 const MIN_LENGTH = 2;
 
 const kanaOnly = /^[\u3040-\u309F\u30A0-\u30FFー]+$/u;
@@ -34,15 +35,12 @@ const main = async () => {
     }
     seen.add(word);
     words.push(word);
-    if (words.length >= TARGET_COUNT) {
-      break;
-    }
   }
 
-  if (words.length < TARGET_COUNT) {
-    throw new Error(
-      `Expected at least ${TARGET_COUNT} words, got ${words.length}`
-    );
+  words.sort((a, b) => a.localeCompare(b, 'ja'));
+
+  if (words.length === 0) {
+    throw new Error('No words collected from source');
   }
 
   const outPath = join(
