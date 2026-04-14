@@ -1,10 +1,16 @@
 import { render } from '@testing-library/preact';
 import { describe, it, expect } from 'vitest';
 import { App } from './app';
+import { KANA_WORDS } from './words';
 
 describe('App', () => {
-  it('renders the heading', () => {
-    const { getByText } = render(<App />);
+  it('renders heading, a listed kana word, and next control', () => {
+    const { getByText, getByRole } = render(<App />);
     expect(getByText('Random Japanese Flashcards')).toBeTruthy();
+    const wordEl = document.querySelector('.kana');
+    const shown = wordEl?.textContent ?? '';
+    expect(shown.length).toBeGreaterThan(0);
+    expect(KANA_WORDS.includes(shown)).toBe(true);
+    expect(getByRole('button', { name: /next card/i })).toBeTruthy();
   });
 });

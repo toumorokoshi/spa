@@ -40,6 +40,12 @@ export default [
     }
   },
   {
-    ignores: ['dist/**', 'node_modules/**']
+    files: ['**/*.{test,spec}.{ts,tsx}'],
+    rules: {
+      'no-magic-numbers': 'off'
+    }
+  },
+  {
+    ignores: ['dist/**', 'node_modules/**', 'scripts/**']
   }
 ];
