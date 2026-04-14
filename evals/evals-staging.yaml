@@ -1,5 +1,5 @@
 evals:
-  - id: "1"
+  - id: '1'
     prompt: >
       create a command-line tool that mimics "grep". It should have the following functionality:
 

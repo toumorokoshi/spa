@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SPA Collection</title>
+    <link rel="icon" href="/spa/favicon.svg" type="image/svg+xml" />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: #f8f9fa;
+        color: #1a1a2e;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 3rem 1.5rem;
+      }
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+      }
+      p {
+        color: #555;
+        margin-bottom: 2rem;
+      }
+      .apps {
+        display: grid;
+        gap: 1rem;
+        width: 100%;
+        max-width: 600px;
+      }
+      .apps a {
+        display: block;
+        padding: 1.25rem 1.5rem;
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #1a1a2e;
+        font-weight: 500;
+        transition:
+          box-shadow 0.15s,
+          border-color 0.15s;
+      }
+      .apps a:hover {
+        border-color: #888;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>SPA Collection</h1>
+    <p>Simple single-page apps for personal use.</p>
+    <div class="apps">
+      <a href="/spa/src/random-japanese-flashcards/"
+        >Random Japanese Flashcards</a
+      >
+    </div>
+  </body>
+</html>

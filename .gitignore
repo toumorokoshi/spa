@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production
+dist/
+
+# Misc
+.DS_Store
+*.pem
+
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Beads/Dolt
+.beads/
+.dolt/
+*.db

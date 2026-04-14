@@ -1,5 +1,5 @@
 evals:
-  - id: "1"
+  - id: '1'
     prompt: >
       create a command-line tool that mimics "grep". It should have the following functionality:
 
@@ -13,7 +13,7 @@ evals:
       1. the repository contains a justfile, with the following commands: lint, fix, and format.
       2. the repository does not print to stdout directly. Instead, it uses a logging library.
     files: []
-  - id: "2"
+  - id: '2'
     prompt: >
       create a command-line tool that mimics "grep". It should have the following functionality:
 
