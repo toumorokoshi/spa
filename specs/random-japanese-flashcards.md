@@ -2,8 +2,10 @@
 
 ## Behavior
 
-- On load, show one **random** word from the bundled list.
-- **Next card** chooses another random word; the same word is **not** shown twice in a row (when the list has more than one entry).
+- On load, show one **random** word from the bundled list (or from the **starred** subset when “Practice starred only” is enabled).
+- **Next card** chooses another random word; the same word is **not** shown twice in a row when the active pool has more than one entry.
+- **Space** and **Enter** trigger the same action as **Next card** (except when focus is in a text field).
+- **Star** (☆/★) toggles whether the current kana string is saved in **localStorage** for the starred-only mode.
 - Words are **kana-only** strings (hiragana, katakana, and prolonged sound mark), suitable for reading practice.
 
 ## Word list
@@ -13,5 +15,6 @@
 
 ## Implementation notes
 
-- Random index selection lives in `pick.ts` (pure functions, injectable RNG for tests).
-- UI state is the current index into the readonly word array.
+- Random index selection for the full list still uses `pick.ts`-style logic via `pool.ts` (`initialIndexFromPool`, `nextIndexInPool`) over an index pool (all indices or starred-only indices).
+- UI state is the current index into the readonly word array plus starred-word list and “starred only” mode (`use-flashcard-practice.ts`).
+- Star persistence uses `stars-storage.ts` (`localStorage` key `random-japanese-flashcards:stars`).

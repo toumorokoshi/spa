@@ -1,6 +1,6 @@
 # Random Japanese Flashcards
 
-Single-page app under `src/random-japanese-flashcards/`: shows a random kana-only word for reading practice, with a control to draw another word without an immediate repeat.
+Single-page app under `src/random-japanese-flashcards/`: shows a random kana-only word for reading practice, with **Next card**, **Space** / **Enter** shortcuts, optional **starred** words persisted in the browser, and a **Practice starred only** mode that restricts draws to starred entries.
 
 ## Regenerating words
 

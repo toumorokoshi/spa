@@ -1,19 +1,16 @@
-import { useCallback, useState } from 'preact/hooks';
-import { initialIndex, nextIndex } from './pick';
-import { KANA_WORDS } from './words';
-
-const wordCount = KANA_WORDS.length;
+import { FlashcardControls } from './flashcard-controls';
+import { useFlashcardPractice } from './use-flashcard-practice';
 
 export const App = () => {
-  const [index, setIndex] = useState(() =>
-    initialIndex(wordCount, Math.random)
-  );
-
-  const onNext = useCallback(() => {
-    setIndex((current) => nextIndex(wordCount, current, Math.random));
-  }, []);
-
-  const word = KANA_WORDS[index] ?? '';
+  const {
+    starredOnly,
+    setStarredOnly,
+    poolEmpty,
+    word,
+    isStarred,
+    toggleStar,
+    onNext
+  } = useFlashcardPractice();
 
   return (
     <main>
@@ -21,12 +18,31 @@ export const App = () => {
       <p className="hint">
         Read the kana aloud. Words are common spoken forms (mixed script).
       </p>
+      <FlashcardControls
+        starredOnly={starredOnly}
+        onStarredOnlyChange={setStarredOnly}
+        starPressed={isStarred}
+        onStarToggle={toggleStar}
+        starDisabled={poolEmpty}
+      />
       <div className="card" lang="ja">
-        <p className="kana" aria-live="polite">
-          {word}
-        </p>
+        {poolEmpty ? (
+          <p className="empty-pool">
+            Star at least one word (☆), or turn off &quot;Practice starred
+            only&quot;.
+          </p>
+        ) : (
+          <p className="kana" aria-live="polite">
+            {word}
+          </p>
+        )}
       </div>
-      <button type="button" className="next" onClick={onNext}>
+      <button
+        type="button"
+        className="next"
+        onClick={onNext}
+        disabled={poolEmpty}
+      >
         Next card
       </button>
     </main>

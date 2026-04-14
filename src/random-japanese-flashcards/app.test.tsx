@@ -12,5 +12,9 @@ describe('App', () => {
     expect(shown.length).toBeGreaterThan(0);
     expect(KANA_WORDS.includes(shown)).toBe(true);
     expect(getByRole('button', { name: /next card/i })).toBeTruthy();
+    expect(
+      getByRole('checkbox', { name: /practice starred only/i })
+    ).toBeTruthy();
+    expect(getByRole('button', { name: /star this word/i })).toBeTruthy();
   });
 });
