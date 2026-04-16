@@ -31,6 +31,8 @@
     "eslint-plugin-functional": "^9.0.4",
     "globals": "^17.4.0",
     "jsdom": "^29.0.1",
+    "kuromoji": "^0.1.2",
+    "wanakana": "^5.3.1",
     "prettier": "^3.8.1",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.0",

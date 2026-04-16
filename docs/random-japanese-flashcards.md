@@ -10,4 +10,4 @@ The word list is checked in as `words.json`. To refresh it from the upstream fre
 npm run generate:words
 ```
 
-See `specs/random-japanese-flashcards.md` for behavior and licensing of the source data.
+See `specs/random-japanese-flashcards.md` for behavior, licensing, and how kanji entries are converted to kana (kuromoji + wanakana in the generator only).
