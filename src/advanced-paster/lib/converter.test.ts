@@ -30,11 +30,11 @@ describe('converter', () => {
     };
 
     const result = convert(payload, 'auto');
-    expect(result.html).toBe('<h1>Hello</h1>\n<p>World</p>');
+    expect(result.html).toBe('<h1>Hello</h1><p>World</p>');
     expect(result.markdown).toContain('# Hello');
     expect(result.markdown).toContain('World');
     // HTML tags stripped:
-    expect(result.plaintext).toBe('Hello\nWorld');
+    expect(result.plaintext).toBe('HelloWorld');
   });
 
   it('handles Markdown input automatically', () => {

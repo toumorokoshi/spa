@@ -29,8 +29,21 @@ const detectFormat = (payload: ClipboardDataPayload): InputFormat => {
 
 const convertHtml = (html: string): ConvertedOutputs => {
   const markdown = turndownService.turndown(html);
-  const cleanHtml = (marked.parse(markdown, { async: false }) as string).trim();
-  const plaintext = cleanHtml.replace(/<[^>]*>?/gm, '').trim();
+
+  let cleanHtml = html;
+  // Remove <style>...</style> blocks entirely
+  cleanHtml = cleanHtml.replace(/<style[^>]*>.*?<\/style>/gis, '');
+  // Remove <meta> tags which often come with clipboard HTML
+  cleanHtml = cleanHtml.replace(/<meta[^>]*>/gis, '');
+  // Remove <font> tags but keep content
+  cleanHtml = cleanHtml.replace(/<\/?font[^>]*>/gis, '');
+  // Remove style, class, etc. attributes
+  cleanHtml = cleanHtml.replace(
+    /\s+(style|class|id|color|bgcolor|align|valign|width|height)=("[^"]*"|'[^']*'|[^\s>]+)/gi,
+    ''
+  );
+
+  const plaintext = html.replace(/<[^>]*>?/gm, '').trim();
   return { html: cleanHtml, markdown, plaintext };
 };
 
