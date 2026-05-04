@@ -15,7 +15,10 @@ export interface ConvertedOutputs {
   plaintext: string;
 }
 
+import { gfm } from 'turndown-plugin-gfm';
+
 const turndownService = new TurndownService({ headingStyle: 'atx' });
+turndownService.use(gfm);
 
 const detectFormat = (payload: ClipboardDataPayload): InputFormat => {
   if (payload.htmlText) {
@@ -30,18 +33,15 @@ const detectFormat = (payload: ClipboardDataPayload): InputFormat => {
 const convertHtml = (html: string): ConvertedOutputs => {
   const markdown = turndownService.turndown(html);
 
-  let cleanHtml = html;
-  // Remove <style>...</style> blocks entirely
-  cleanHtml = cleanHtml.replace(/<style[^>]*>.*?<\/style>/gis, '');
-  // Remove <meta> tags which often come with clipboard HTML
-  cleanHtml = cleanHtml.replace(/<meta[^>]*>/gis, '');
-  // Remove <font> tags but keep content
-  cleanHtml = cleanHtml.replace(/<\/?font[^>]*>/gis, '');
-  // Remove style, class, etc. attributes
-  cleanHtml = cleanHtml.replace(
-    /\s+(style|class|id|color|bgcolor|align|valign|width|height)=("[^"]*"|'[^']*'|[^\s>]+)/gi,
-    ''
-  );
+  // Remove <style>...</style> blocks, <meta> tags, <font> tags, and styling attributes
+  const cleanHtml = html
+    .replace(/<style[^>]*>.*?<\/style>/gis, '')
+    .replace(/<meta[^>]*>/gis, '')
+    .replace(/<\/?font[^>]*>/gis, '')
+    .replace(
+      /\s+(style|class|id|color|bgcolor|align|valign|width|height)=("[^"]*"|'[^']*'|[^\s>]+)/gi,
+      ''
+    );
 
   const plaintext = html.replace(/<[^>]*>?/gm, '').trim();
   return { html: cleanHtml, markdown, plaintext };

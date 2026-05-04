@@ -68,4 +68,23 @@ describe('converter', () => {
     const result = convert(payload, 'markdown');
     expect(result.html).toBe('<p>\\alpha</p>');
   });
+
+  it('does not strip HTML tables', () => {
+    const payload = {
+      plainText: 'cell1 cell2',
+      htmlText:
+        '<table style="width: 100%;"><tbody><tr><td style="color: red;">cell1</td><td>cell2</td></tr></tbody></table>'
+    };
+
+    const result = convert(payload, 'auto');
+    expect(result.html).toContain('<table');
+    expect(result.html).toContain('<tbody>');
+    expect(result.html).toContain('<tr');
+    expect(result.html).toContain('<td');
+    expect(result.html).toContain('cell1');
+    expect(result.html).toContain('cell2');
+
+    // Markdown may retain the table as raw HTML if there are no headers
+    expect(result.markdown).toContain('<table');
+  });
 });
