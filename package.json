@@ -23,7 +23,8 @@
   "dependencies": {
     "marked": "^18.0.3",
     "preact": "^10.25.4",
-    "turndown": "^7.2.4"
+    "turndown": "^7.2.4",
+    "turndown-plugin-gfm": "^1.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
