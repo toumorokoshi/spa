@@ -29,8 +29,9 @@ const detectFormat = (payload: ClipboardDataPayload): InputFormat => {
 
 const convertHtml = (html: string): ConvertedOutputs => {
   const markdown = turndownService.turndown(html);
-  const plaintext = html.replace(/<[^>]*>?/gm, '').trim();
-  return { html, markdown, plaintext };
+  const cleanHtml = (marked.parse(markdown, { async: false }) as string).trim();
+  const plaintext = cleanHtml.replace(/<[^>]*>?/gm, '').trim();
+  return { html: cleanHtml, markdown, plaintext };
 };
 
 const convertLatex = (plainText: string): ConvertedOutputs => {
