@@ -70,7 +70,13 @@ export const LATEX_TO_UNICODE: Record<string, string> = {
   '\\prod': '∏',
   '\\sqrt': '√',
   '\\angle': '∠',
-  '\\circ': '∘'
+  '\\circ': '∘',
+  '\\mathbb{R}': 'ℝ',
+  '\\mathbb{Z}': 'ℤ',
+  '\\mathbb{N}': 'ℕ',
+  '\\mathbb{Q}': 'ℚ',
+  '\\mathbb{C}': 'ℂ',
+  '\\setminus': '∖'
 };
 
 /**

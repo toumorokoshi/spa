@@ -27,6 +27,10 @@ describe('latexToText', () => {
       'a, b ∈ G, a ∘ b ∈ G.'
     );
   });
+
+  it('converts blackboard bold and setminus', () => {
+    expect(latexToText('\\mathbb{R} \\setminus {0}')).toBe('ℝ ∖ {0}');
+  });
 });
 
 describe('converter', () => {
@@ -109,6 +113,17 @@ describe('converter', () => {
     expect(result.plaintext).toBe('This item costs $10 and that costs $20.');
     expect(result.markdown).toBe('This item costs $10 and that costs $20.');
     expect(result.html).toBe('<p>This item costs $10 and that costs $20.</p>');
+  });
+
+  it('handles math set operations automatically', () => {
+    const payload = {
+      plainText: '\\mathbb{R} \\setminus {0}'
+    };
+
+    const result = convert(payload, 'auto');
+    expect(result.plaintext).toBe('ℝ ∖ {0}');
+    expect(result.markdown).toBe('ℝ ∖ {0}');
+    expect(result.html).toBe('<p>ℝ ∖ {0}</p>');
   });
 
   it('does not strip HTML tables', () => {

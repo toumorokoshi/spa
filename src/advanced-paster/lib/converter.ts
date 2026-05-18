@@ -100,7 +100,9 @@ const LATEX_INDICATORS = [
   'mathbf',
   'mathit',
   'begin',
-  'end'
+  'end',
+  'mathbb',
+  'setminus'
 ];
 
 const detectFormat = (payload: ClipboardDataPayload): InputFormat => {
