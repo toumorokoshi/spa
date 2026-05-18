@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { describe, it, expect } from 'vitest';
 import { convert } from './converter';
 import { latexToText } from './latex';
@@ -19,6 +20,12 @@ describe('latexToText', () => {
 
   it('removes math boundaries', () => {
     expect(latexToText('$$ \\alpha $$')).toBe('α');
+  });
+
+  it('formats the user specific string', () => {
+    expect(latexToText('$a, b \\in G$, $a \\circ b \\in G$.')).toBe(
+      'a, b ∈ G, a ∘ b ∈ G.'
+    );
   });
 });
 
@@ -67,6 +74,41 @@ describe('converter', () => {
 
     const result = convert(payload, 'markdown');
     expect(result.html).toBe('<p>\\alpha</p>');
+  });
+
+  it('handles the user specific string automatically', () => {
+    const payload = {
+      plainText: '$a, b \\in G$, $a \\circ b \\in G$.'
+    };
+
+    const result = convert(payload, 'auto');
+    expect(result.plaintext).toBe('a, b ∈ G, a ∘ b ∈ G.');
+    expect(result.markdown).toBe('a, b ∈ G, a ∘ b ∈ G.');
+    expect(result.html).toBe('<p>a, b ∈ G, a ∘ b ∈ G.</p>');
+  });
+
+  it('converts embedded LaTeX inside Markdown', () => {
+    const payload = {
+      plainText: 'Let $a, b \\in G$ be elements, then $a \\circ b \\in G$.'
+    };
+
+    const result = convert(payload, 'markdown');
+    expect(result.plaintext).toBe('Let a, b ∈ G be elements, then a ∘ b ∈ G.');
+    expect(result.markdown).toBe('Let a, b ∈ G be elements, then a ∘ b ∈ G.');
+    expect(result.html).toBe(
+      '<p>Let a, b ∈ G be elements, then a ∘ b ∈ G.</p>'
+    );
+  });
+
+  it('protects currency from incorrect LaTeX conversion in Markdown', () => {
+    const payload = {
+      plainText: 'This item costs $10 and that costs $20.'
+    };
+
+    const result = convert(payload, 'markdown');
+    expect(result.plaintext).toBe('This item costs $10 and that costs $20.');
+    expect(result.markdown).toBe('This item costs $10 and that costs $20.');
+    expect(result.html).toBe('<p>This item costs $10 and that costs $20.</p>');
   });
 
   it('does not strip HTML tables', () => {

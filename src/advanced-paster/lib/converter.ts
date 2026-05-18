@@ -1,6 +1,6 @@
 import TurndownService from 'turndown';
 import { marked } from 'marked';
-import { latexToText } from './latex';
+import { latexToText, convertEmbeddedLatex } from './latex';
 
 export type InputFormat = 'auto' | 'html' | 'markdown' | 'latex';
 
@@ -20,21 +20,113 @@ import { gfm } from 'turndown-plugin-gfm';
 const turndownService = new TurndownService({ headingStyle: 'atx' });
 turndownService.use(gfm);
 
+const LATEX_INDICATORS = [
+  'alpha',
+  'beta',
+  'gamma',
+  'delta',
+  'epsilon',
+  'zeta',
+  'eta',
+  'theta',
+  'iota',
+  'kappa',
+  'lambda',
+  'mu',
+  'nu',
+  'xi',
+  'pi',
+  'rho',
+  'sigma',
+  'tau',
+  'upsilon',
+  'phi',
+  'chi',
+  'psi',
+  'omega',
+  'Gamma',
+  'Delta',
+  'Theta',
+  'Lambda',
+  'Xi',
+  'Pi',
+  'Sigma',
+  'Upsilon',
+  'Phi',
+  'Psi',
+  'Omega',
+  'times',
+  'div',
+  'pm',
+  'mp',
+  'cdot',
+  'infty',
+  'approx',
+  'neq',
+  'leq',
+  'geq',
+  'equiv',
+  'sim',
+  'propto',
+  'forall',
+  'exists',
+  'in',
+  'notin',
+  'subset',
+  'supset',
+  'cup',
+  'cap',
+  'Rightarrow',
+  'Leftarrow',
+  'Leftrightarrow',
+  'rightarrow',
+  'leftarrow',
+  'leftrightarrow',
+  'uparrow',
+  'downarrow',
+  'partial',
+  'nabla',
+  'int',
+  'sum',
+  'prod',
+  'sqrt',
+  'angle',
+  'circ',
+  'frac',
+  'textbf',
+  'textit',
+  'text',
+  'mathrm',
+  'mathbf',
+  'mathit',
+  'begin',
+  'end'
+];
+
 const detectFormat = (payload: ClipboardDataPayload): InputFormat => {
   if (payload.htmlText) {
     return 'html';
   }
-  if (/\\(alpha|beta|frac|sum|int|begin{|sqrt|times)/.test(payload.plainText)) {
+
+  const hasLatexDelimiters = /\$\$|\\\[|\\\]|\\\(|\\\)/.test(payload.plainText);
+  const commandsPattern = new RegExp(
+    `\\\\(${LATEX_INDICATORS.join('|')})(?![a-zA-Z])`
+  );
+  const hasLatexCommands = commandsPattern.test(payload.plainText);
+
+  if (hasLatexDelimiters || hasLatexCommands) {
     return 'latex';
   }
+
   return 'markdown';
 };
 
 const convertHtml = (html: string): ConvertedOutputs => {
-  const markdown = turndownService.turndown(html);
+  const processedHtml = convertEmbeddedLatex(html);
+  const markdown = turndownService.turndown(processedHtml);
 
   // Remove <style>...</style> blocks, <meta> tags, <font> tags, and styling attributes
-  const cleanHtml = html
+  const cleanHtml = processedHtml
     .replace(/<style[^>]*>.*?<\/style>/gis, '')
     .replace(/<meta[^>]*>/gis, '')
     .replace(/<\/?font[^>]*>/gis, '')
@@ -43,7 +135,7 @@ const convertHtml = (html: string): ConvertedOutputs => {
       ''
     );
 
-  const plaintext = html.replace(/<[^>]*>?/gm, '').trim();
+  const plaintext = processedHtml.replace(/<[^>]*>?/gm, '').trim();
   return { html: cleanHtml, markdown, plaintext };
 };
 
@@ -55,7 +147,8 @@ const convertLatex = (plainText: string): ConvertedOutputs => {
 };
 
 const convertMarkdown = (plainText: string): ConvertedOutputs => {
-  const markdown = plainText;
+  const processedMarkdown = convertEmbeddedLatex(plainText);
+  const markdown = processedMarkdown;
   const htmlBody = marked.parse(markdown, { async: false }) as string;
   const html = htmlBody.trim();
   const plaintext = html.replace(/<[^>]*>?/gm, '').trim();
