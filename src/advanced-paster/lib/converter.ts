@@ -157,11 +157,17 @@ const convertMarkdown = (plainText: string): ConvertedOutputs => {
   return { html, markdown, plaintext };
 };
 
+const convertMisc = (plainText: string): string => {
+  // remove displayStyle, which shows up from wikipedia
+  return plainText.replace(/\{\\displaystyle\s*[^}]+\}/g, '');
+};
+
 export const convert = (
   payload: ClipboardDataPayload,
   format: InputFormat
 ): ConvertedOutputs => {
   const resolvedFormat = format === 'auto' ? detectFormat(payload) : format;
+  payload.plainText = convertMisc(payload.plainText);
 
   if (resolvedFormat === 'html') {
     return convertHtml(payload.htmlText || payload.plainText);
