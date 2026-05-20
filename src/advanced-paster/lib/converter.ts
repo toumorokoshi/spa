@@ -123,8 +123,158 @@ const detectFormat = (payload: ClipboardDataPayload): InputFormat => {
   return 'markdown';
 };
 
+const SPAN_START_LEN = 5;
+const SPAN_END_LEN = 7;
+
+const findMatchingBrace = (
+  text: string,
+  index: number,
+  braceCount: number
+): number => {
+  if (index >= text.length || braceCount === 0) {
+    return index;
+  }
+  const nextChar = text[index];
+  const nextCount =
+    nextChar === '{'
+      ? braceCount + 1
+      : nextChar === '}'
+        ? braceCount - 1
+        : braceCount;
+  return findMatchingBrace(text, index + 1, nextCount);
+};
+
+const removeDisplayStyle = (text: string): string => {
+  const pattern = /\{\s*\\(?:display|text|script|scriptscript)style/i;
+  const match = pattern.exec(text);
+  if (!match) {
+    return text;
+  }
+  const startIdx = match.index;
+  const matchLength = match[0].length;
+  const j = findMatchingBrace(text, startIdx + 1, 1);
+
+  if (j <= text.length && text[j - 1] === '}') {
+    const before = text.slice(0, startIdx);
+    const after = text.slice(j);
+    return removeDisplayStyle(before + after);
+  }
+
+  const before = text.slice(0, startIdx + matchLength);
+  const after = text.slice(startIdx + matchLength);
+  return before + removeDisplayStyle(after);
+};
+
+const findMatchingSpan = (
+  html: string,
+  index: number,
+  spanCount: number
+): number => {
+  if (index >= html.length || spanCount === 0) {
+    return index;
+  }
+  if (html.startsWith('<span', index)) {
+    return findMatchingSpan(html, index + SPAN_START_LEN, spanCount + 1);
+  }
+  if (html.startsWith('</span>', index)) {
+    return findMatchingSpan(html, index + SPAN_END_LEN, spanCount - 1);
+  }
+  return findMatchingSpan(html, index + 1, spanCount);
+};
+
+const replaceHtmlContainers = (
+  html: string,
+  className: string,
+  replaceFn: (innerContent: string) => string
+): string => {
+  const startPattern = new RegExp(
+    `<span[^>]*class="[^"]*${className}[^"]*"[^>]*>`,
+    'i'
+  );
+  const match = startPattern.exec(html);
+  if (!match) {
+    return html;
+  }
+  const startIdx = match.index;
+  const startTag = match[0];
+  const j = findMatchingSpan(html, startIdx + startTag.length, 1);
+  if (j <= html.length && html.slice(j - SPAN_END_LEN, j) === '</span>') {
+    const before = html.slice(0, startIdx);
+    const innerContent = html.slice(
+      startIdx + startTag.length,
+      j - SPAN_END_LEN
+    );
+    const after = html.slice(j);
+    return (
+      before +
+      replaceFn(innerContent) +
+      replaceHtmlContainers(after, className, replaceFn)
+    );
+  }
+  const before = html.slice(0, startIdx + startTag.length);
+  const after = html.slice(startIdx + startTag.length);
+  return before + replaceHtmlContainers(after, className, replaceFn);
+};
+
+const unwrapStyleCommands = (text: string): string => {
+  const pattern = /\{\s*\\(?:display|text|script|scriptscript)style/i;
+  const match = pattern.exec(text);
+  if (!match) {
+    return text.replace(/\\(?:display|text|script|scriptscript)style\s*/gi, '');
+  }
+  const startIdx = match.index;
+  const matchLength = match[0].length;
+  const j = findMatchingBrace(text, startIdx + 1, 1);
+  if (j <= text.length && text[j - 1] === '}') {
+    const before = text.slice(0, startIdx);
+    const inner = text.slice(startIdx + matchLength, j - 1);
+    const after = text.slice(j);
+    return unwrapStyleCommands(before + inner + after);
+  }
+  const before = text.slice(0, startIdx + matchLength);
+  const after = text.slice(startIdx + matchLength);
+  return before + unwrapStyleCommands(after);
+};
+
+const extractLatexFromMathHtml = (innerContent: string): string | null => {
+  const annotationMatch = /<annotation[^>]*>([\s\S]*?)<\/annotation>/i.exec(
+    innerContent
+  );
+  if (annotationMatch) {
+    return annotationMatch[1].trim();
+  }
+  const mathMatch = /<math[^>]*alttext="([^"]+)"/i.exec(innerContent);
+  if (mathMatch) {
+    return mathMatch[1].trim();
+  }
+  const imgMatch = /<img[^>]*alt="([^"]+)"/i.exec(innerContent);
+  if (imgMatch) {
+    return imgMatch[1].trim();
+  }
+  return null;
+};
+
+const cleanHtmlMath = (html: string): string => {
+  const replaceFn = (innerContent: string): string => {
+    const rawLatex = extractLatexFromMathHtml(innerContent);
+    if (rawLatex !== null) {
+      const cleanedLatex = unwrapStyleCommands(rawLatex);
+      return latexToText(cleanedLatex);
+    }
+    return innerContent.replace(/<[^>]*>?/gm, '');
+  };
+
+  const processedWiki = replaceHtmlContainers(
+    html,
+    'mwe-math-element',
+    replaceFn
+  );
+  return replaceHtmlContainers(processedWiki, 'katex', replaceFn);
+};
+
 const convertHtml = (html: string): ConvertedOutputs => {
-  const processedHtml = convertEmbeddedLatex(html);
+  const cleanedHtml = cleanHtmlMath(html);
+  const processedHtml = convertEmbeddedLatex(cleanedHtml);
   const markdown = turndownService.turndown(processedHtml);
 
   // Remove <style>...</style> blocks, <meta> tags, <font> tags, and styling attributes
@@ -159,7 +309,7 @@ const convertMarkdown = (plainText: string): ConvertedOutputs => {
 
 const convertMisc = (plainText: string): string => {
   // remove displayStyle, which shows up from wikipedia
-  return plainText.replace(/\{\\displaystyle\s*[^}]+\}/g, '');
+  return removeDisplayStyle(plainText);
 };
 
 export const convert = (

@@ -144,4 +144,20 @@ describe('converter', () => {
     // Markdown may retain the table as raw HTML if there are no headers
     expect(result.markdown).toContain('<table');
   });
+
+  it('handles Wikipedia copy-paste math', () => {
+    const payload = {
+      plainText:
+        'U\n{\\displaystyle U}\nz\n0\n{\\displaystyle z_{0}}\nf(z) = |z|^2\n{\\displaystyle \\textstyle f(z)=\\vert z\\vert {\\vphantom {l}}^{2}=z{\\bar {z}}}',
+      htmlText:
+        '<span class="mwe-math-element"><span class="mwe-math-mathml-inline" style="display: none;"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\\displaystyle U}"><semantics><mrow class="MJX-TeXAtom-ORD"><mstyle displaystyle="true" scriptlevel="0"><mi>U</mi></mstyle></mrow><annotation encoding="application/x-tex">{\\displaystyle U}</annotation></semantics></math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/e1c45ec5976b97669d03831bfa2b325c38ee7a1d" class="mwe-math-fallback-image-inline" aria-hidden="true" style="vertical-align: -0.338ex; width:2.054ex; height:2.176ex;" alt="U" /></span>'
+    };
+
+    const resultAuto = convert(payload, 'auto');
+    expect(resultAuto.plaintext).toBe('U');
+    expect(resultAuto.markdown).toBe('U');
+
+    const resultMarkdown = convert(payload, 'markdown');
+    expect(resultMarkdown.plaintext).toBe('U\nz\n0\nf(z) = |z|^2');
+  });
 });
