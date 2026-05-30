@@ -1,6 +1,6 @@
 import TurndownService from 'turndown';
 import { marked } from 'marked';
-import { latexToText, convertEmbeddedLatex } from './latex';
+import { latexToText, convertEmbeddedLatex, getLatexCommands } from './latex';
 
 export type InputFormat = 'auto' | 'html' | 'markdown' | 'latex';
 
@@ -20,78 +20,7 @@ import { gfm } from 'turndown-plugin-gfm';
 const turndownService = new TurndownService({ headingStyle: 'atx' });
 turndownService.use(gfm);
 
-const LATEX_INDICATORS = [
-  'alpha',
-  'beta',
-  'gamma',
-  'delta',
-  'epsilon',
-  'zeta',
-  'eta',
-  'theta',
-  'iota',
-  'kappa',
-  'lambda',
-  'mu',
-  'nu',
-  'xi',
-  'pi',
-  'rho',
-  'sigma',
-  'tau',
-  'upsilon',
-  'phi',
-  'chi',
-  'psi',
-  'omega',
-  'Gamma',
-  'Delta',
-  'Theta',
-  'Lambda',
-  'Xi',
-  'Pi',
-  'Sigma',
-  'Upsilon',
-  'Phi',
-  'Psi',
-  'Omega',
-  'times',
-  'div',
-  'pm',
-  'mp',
-  'cdot',
-  'infty',
-  'approx',
-  'neq',
-  'leq',
-  'geq',
-  'equiv',
-  'sim',
-  'propto',
-  'forall',
-  'exists',
-  'in',
-  'notin',
-  'subset',
-  'supset',
-  'cup',
-  'cap',
-  'Rightarrow',
-  'Leftarrow',
-  'Leftrightarrow',
-  'rightarrow',
-  'leftarrow',
-  'leftrightarrow',
-  'uparrow',
-  'downarrow',
-  'partial',
-  'nabla',
-  'int',
-  'sum',
-  'prod',
-  'sqrt',
-  'angle',
-  'circ',
+const STRUCTURAL_MACROS = [
   'frac',
   'textbf',
   'textit',
@@ -102,8 +31,16 @@ const LATEX_INDICATORS = [
   'begin',
   'end',
   'mathbb',
-  'setminus'
+  'mathcal'
 ];
+
+const getLatexIndicators = (): string[] => {
+  const dynamicCommands = getLatexCommands();
+  const allIndicators = new Set([...STRUCTURAL_MACROS, ...dynamicCommands]);
+  return Array.from(allIndicators);
+};
+
+const LATEX_INDICATORS = getLatexIndicators();
 
 const detectFormat = (payload: ClipboardDataPayload): InputFormat => {
   if (payload.htmlText) {

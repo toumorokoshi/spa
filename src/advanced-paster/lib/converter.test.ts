@@ -31,9 +31,24 @@ describe('latexToText', () => {
   it('converts blackboard bold and setminus', () => {
     expect(latexToText('\\mathbb{R} \\setminus {0}')).toBe('ℝ ∖ {0}');
   });
+
+  it('converts newly added blackboard bold, calligraphic, and logic symbols', () => {
+    expect(latexToText('\\mathbb{A} \\cup \\mathcal{B}')).toBe('𝔸 ∪ ℬ');
+    expect(latexToText('\\aleph \\approx \\hbar')).toBe('ℵ ≈ ħ');
+    expect(latexToText('\\sin(\\theta) \\implies \\cos(\\theta)')).toBe(
+      'sin(θ) ⟹ cos(θ)'
+    );
+  });
 });
 
 describe('converter', () => {
+  it('auto-detects LaTeX format using new math indicators', () => {
+    const payload = {
+      plainText: 'Let x \\in \\mathbb{A}'
+    };
+    const result = convert(payload, 'auto');
+    expect(result.plaintext).toBe('Let x ∈ 𝔸');
+  });
   it('handles HTML input automatically', () => {
     const payload = {
       plainText: 'Hello World',
