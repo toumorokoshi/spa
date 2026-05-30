@@ -244,6 +244,7 @@ export const LATEX_TO_UNICODE: Record<string, string> = {
   '\\theta': 'θ',
   '\\Theta': 'Θ',
   '\\times': '×',
+  '\\to': '→',
   '\\top': '⊤',
   '\\uparrow': '↑',
   '\\Uparrow': '⇑',
