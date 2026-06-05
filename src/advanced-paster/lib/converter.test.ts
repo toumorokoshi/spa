@@ -173,6 +173,28 @@ describe('converter', () => {
     expect(resultAuto.markdown).toBe('U');
 
     const resultMarkdown = convert(payload, 'markdown');
-    expect(resultMarkdown.plaintext).toBe('U\nz\n0\nf(z) = |z|^2');
+    expect(resultMarkdown.plaintext).toBe(
+      'U z_{0} f(z)=\\vert z\\vert {\\vphantom {l}}^{2}=z{\\bar {z}}'
+    );
+  });
+
+  it('handles Wikipedia style inline math copy-paste without newlines', () => {
+    const payload = {
+      plainText:
+        'In mathematics, a manifold is a topological space that locally resembles Euclidean space near each point. More precisely, an \n n\n{\\displaystyle n}-dimensional manifold, or \n n\n{\\displaystyle n}-manifold for short, is a topological space with the property that each point has a neighborhood that is homeomorphic to an open subset of \n n\n{\\displaystyle n}-dimensional Euclidean space.'
+    };
+
+    const result = convert(payload, 'markdown');
+    expect(result.plaintext).toBe(
+      'In mathematics, a manifold is a topological space that locally resembles Euclidean space near each point. More precisely, an n-dimensional manifold, or n-manifold for short, is a topological space with the property that each point has a neighborhood that is homeomorphic to an open subset of n-dimensional Euclidean space.'
+    );
+  });
+
+  it('converts standalone displaystyle LaTeX without deleting it', () => {
+    const payload = {
+      plainText: 'Let {\\displaystyle \\alpha + \\beta} be a sum.'
+    };
+    const result = convert(payload, 'markdown');
+    expect(result.plaintext).toBe('Let α + β be a sum.');
   });
 });

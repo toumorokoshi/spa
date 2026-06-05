@@ -81,7 +81,111 @@ const findMatchingBrace = (
   return findMatchingBrace(text, index + 1, nextCount);
 };
 
-const removeDisplayStyle = (text: string): string => {
+const MIN_DEDUPLICATE_PREFIX_LEN = 3;
+const DEDUPLICATE_PREFIX_RATIO = 0.5;
+const SHORT_FALLBACK_LEN = 2;
+const MAX_FALLBACK_SEARCH_LEN = 100;
+const FALLBACK_SEARCH_RATIO = 3;
+
+const normalizeForComparison = (str: string): string => {
+  return str
+    .toLowerCase()
+    .replace(/\\[a-zA-Z]+/g, '')
+    .replace(/[^a-z0-9]/g, '');
+};
+
+const getCommonPrefixLength = (a: string, b: string, index = 0): number => {
+  if (index >= a.length || index >= b.length || a[index] !== b[index]) {
+    return index;
+  }
+  return getCommonPrefixLength(a, b, index + 1);
+};
+
+const isDuplicate = (fallback: string, expected: string): boolean => {
+  const normFallback = normalizeForComparison(fallback);
+  const normExpected = normalizeForComparison(expected);
+  if (!normFallback || !normExpected) {
+    return false;
+  }
+  if (normFallback.length <= SHORT_FALLBACK_LEN) {
+    return normFallback === normExpected;
+  }
+  const prefixLen = getCommonPrefixLength(normFallback, normExpected);
+  const requiredLen = Math.max(
+    MIN_DEDUPLICATE_PREFIX_LEN,
+    Math.floor(normFallback.length * DEDUPLICATE_PREFIX_RATIO)
+  );
+  return prefixLen >= requiredLen;
+};
+
+const hasWordBoundary = (before: string, suffixIndex: number): boolean => {
+  if (suffixIndex === 0) {
+    return true;
+  }
+  const prevChar = before[suffixIndex - 1];
+  return !/[a-zA-Z0-9]/.test(prevChar);
+};
+
+const findFallbackSuffixRecursive = (
+  before: string,
+  converted: string,
+  index: number,
+  minIndex: number
+): string => {
+  if (index < minIndex) {
+    return '';
+  }
+  const candidate = before.slice(index);
+  if (
+    candidate.trim() &&
+    isDuplicate(candidate, converted) &&
+    hasWordBoundary(before, index)
+  ) {
+    return candidate;
+  }
+  return findFallbackSuffixRecursive(before, converted, index - 1, minIndex);
+};
+
+const findFallbackSuffix = (before: string, converted: string): string => {
+  const maxSearchLen = Math.min(
+    before.length,
+    Math.max(MAX_FALLBACK_SEARCH_LEN, converted.length * FALLBACK_SEARCH_RATIO)
+  );
+  return findFallbackSuffixRecursive(
+    before,
+    converted,
+    before.length - 1,
+    before.length - maxSearchLen
+  );
+};
+
+const getCleanedBefore = (beforeWithoutFallback: string): string => {
+  const matchWhitespace = /\s+$/.exec(beforeWithoutFallback);
+  if (!matchWhitespace) {
+    return beforeWithoutFallback;
+  }
+  const hasParagraphBreak = matchWhitespace[0].includes('\n\n');
+  return beforeWithoutFallback.trimEnd() + (hasParagraphBreak ? '\n\n' : ' ');
+};
+
+const processBlockReplacement = (
+  before: string,
+  after: string,
+  converted: string
+): string => {
+  const fallbackSuffix = converted ? findFallbackSuffix(before, converted) : '';
+  if (!fallbackSuffix) {
+    return before + converted + after;
+  }
+  const beforeWithoutFallback = before.slice(
+    0,
+    before.length - fallbackSuffix.length
+  );
+  const cleanedBefore = getCleanedBefore(beforeWithoutFallback);
+  return cleanedBefore + converted + after;
+};
+
+const processDisplayStyle = (text: string): string => {
   const pattern = /\{\s*\\(?:display|text|script|scriptscript)style/i;
   const match = pattern.exec(text);
   if (!match) {
@@ -94,12 +198,15 @@ const removeDisplayStyle = (text: string): string => {
   if (j <= text.length && text[j - 1] === '}') {
     const before = text.slice(0, startIdx);
     const after = text.slice(j);
-    return removeDisplayStyle(before + after);
+    const latexInner = text.slice(startIdx + matchLength, j - 1);
+    const converted = latexToText(unwrapStyleCommands(latexInner));
+    const processedText = processBlockReplacement(before, after, converted);
+    return processDisplayStyle(processedText);
   }
 
   const before = text.slice(0, startIdx + matchLength);
   const after = text.slice(startIdx + matchLength);
-  return before + removeDisplayStyle(after);
+  return before + processDisplayStyle(after);
 };
 
 const findMatchingSpan = (
@@ -245,8 +352,8 @@ const convertMarkdown = (plainText: string): ConvertedOutputs => {
 };
 
 const convertMisc = (plainText: string): string => {
-  // remove displayStyle, which shows up from wikipedia
-  return removeDisplayStyle(plainText);
+  // process displayStyle, which shows up from wikipedia
+  return processDisplayStyle(plainText);
 };
 
 export const convert = (
