@@ -280,18 +280,119 @@ export const getLatexCommands = (): string[] =>
     return commandOnly.trim();
   });
 
+export const SUPERSCRIPTS: Record<string, string> = {
+  '0': '⁰',
+  '1': '¹',
+  '2': '²',
+  '3': '³',
+  '4': '⁴',
+  '5': '⁵',
+  '6': '⁶',
+  '7': '⁷',
+  '8': '⁸',
+  '9': '⁹',
+  '+': '⁺',
+  '-': '⁻',
+  '=': '⁼',
+  '(': '⁽',
+  ')': '⁾',
+  n: 'ⁿ',
+  i: 'ⁱ',
+  x: 'ˣ'
+};
+
+export const SUBSCRIPTS: Record<string, string> = {
+  '0': '₀',
+  '1': '₁',
+  '2': '₂',
+  '3': '₃',
+  '4': '₄',
+  '5': '₅',
+  '6': '₆',
+  '7': '₇',
+  '8': '₈',
+  '9': '₉',
+  '+': '₊',
+  '-': '₋',
+  '=': '₌',
+  '(': '₍',
+  ')': '₎',
+  a: 'ₐ',
+  e: 'ₑ',
+  h: 'ₕ',
+  i: 'ᵢ',
+  j: 'ⱼ',
+  k: 'ₖ',
+  l: 'ₗ',
+  m: 'ₘ',
+  n: 'ₙ',
+  o: 'ₒ',
+  p: 'ₚ',
+  r: 'ᵣ',
+  s: 'ₛ',
+  t: 'ₜ',
+  u: 'ᵤ',
+  v: 'ᵥ',
+  x: 'ₓ'
+};
+
+export const unicodeToLetterMap: Record<string, string> = Object.entries(
+  LATEX_TO_UNICODE
+).reduce(
+  (acc, [key, val]) => {
+    const match = /\\math(?:bb|cal){([A-Z])}/.exec(key);
+    if (match) {
+      return { ...acc, [val]: match[1].toLowerCase() };
+    }
+    return acc;
+  },
+  {} as Record<string, string>
+);
+
+const convertSuperscriptsAndSubscripts = (text: string): string => {
+  return text
+    .replace(/\^{([^}]+)}/g, (_, content) =>
+      content
+        .split('')
+        .map((char) => SUPERSCRIPTS[char] || char)
+        .join('')
+    )
+    .replace(
+      /\^([a-zA-Z0-9+-=()])/g,
+      (_, char) => SUPERSCRIPTS[char] || `^${char}`
+    )
+    .replace(/_{([^}]+)}/g, (_, content) =>
+      content
+        .split('')
+        .map((char) => SUBSCRIPTS[char] || char)
+        .join('')
+    )
+    .replace(
+      /_([a-zA-Z0-9+-=()])/g,
+      (_, char) => SUBSCRIPTS[char] || `_${char}`
+    );
+};
+
 /**
  * Pure function that performs a best-effort conversion of LaTeX strings
  * to plain text with unicode symbols.
  * Strips out structural macros but preserves their content where possible.
  */
-export const latexToText = (latex: string): string =>
-  Object.entries(LATEX_TO_UNICODE)
+export const latexToText = (latex: string): string => {
+  const normalized = latex
+    .replace(
+      /\\(mathbb|mathcal|mathbf|mathrm|mathit|text|textbf|textit|frac)\s+({)/g,
+      '\\$1$2'
+    )
+    .replace(/\s*\^\s*/g, '^')
+    .replace(/\s*_\s*/g, '_');
+
+  const converted = Object.entries(LATEX_TO_UNICODE)
     .reduce((text, [symbol, unicode]) => {
       const escaped = escapeRegExp(symbol.replace('\\', ''));
       const regex = new RegExp(`\\\\${escaped}(?![a-zA-Z])`, 'g');
       return text.replace(regex, unicode);
-    }, latex)
+    }, normalized)
     .replace(/\\(textbf|textit|text|mathrm|mathbf|mathit){([^}]+)}/g, '$2')
     .replace(/\$\$?/g, '')
     .replace(/\\\[|\\\]|\\\(|\\\)/g, '')
@@ -301,6 +402,9 @@ export const latexToText = (latex: string): string =>
     .replace(/\\begin{([^}]+)}/g, '')
     .replace(/\\end{([^}]+)}/g, '')
     .trim();
+
+  return convertSuperscriptsAndSubscripts(converted);
+};
 
 const MAX_SHORT_LATEX_LENGTH = 4;
 

@@ -174,7 +174,7 @@ describe('converter', () => {
 
     const resultMarkdown = convert(payload, 'markdown');
     expect(resultMarkdown.plaintext).toBe(
-      'U z_{0} f(z)=\\vert z\\vert {\\vphantom {l}}^{2}=z{\\bar {z}}'
+      'U z₀ f(z)=\\vert z\\vert {\\vphantom {l}}²=z{\\bar {z}}'
     );
   });
 
@@ -196,5 +196,31 @@ describe('converter', () => {
     };
     const result = convert(payload, 'markdown');
     expect(result.plaintext).toBe('Let α + β be a sum.');
+  });
+
+  it('converts superscripts and subscripts including R^3', () => {
+    const payload1 = {
+      plainText:
+        'A surface S in the Euclidean space \\mathbb {R} ^{3} is orientable...'
+    };
+    const result1 = convert(payload1, 'auto');
+    expect(result1.plaintext).toBe(
+      'A surface S in the Euclidean space ℝ³ is orientable...'
+    );
+
+    const payload2 = {
+      plainText: 'Let x_{i} \\in \\mathbb{R}^{n}'
+    };
+    const result2 = convert(payload2, 'auto');
+    expect(result2.plaintext).toBe('Let xᵢ ∈ ℝⁿ');
+  });
+
+  it('handles user exact orientability paste with R^3', () => {
+    const payload = {
+      plainText:
+        'A surface S in the Euclidean space \\mathbb {R} ^{3} is orientable if a chiral two-dimensional figure (for example, ) cannot be moved around the surface and back to where it started so that it looks like its own mirror image (). Otherwise the surface is non-orientable.'
+    };
+    const result = convert(payload, 'auto');
+    expect(result.plaintext).toContain('Euclidean space ℝ³ is orientable');
   });
 });

@@ -1,6 +1,13 @@
 import TurndownService from 'turndown';
 import { marked } from 'marked';
-import { latexToText, convertEmbeddedLatex, getLatexCommands } from './latex';
+import {
+  latexToText,
+  convertEmbeddedLatex,
+  getLatexCommands,
+  SUPERSCRIPTS,
+  SUBSCRIPTS,
+  unicodeToLetterMap
+} from './latex';
 
 export type InputFormat = 'auto' | 'html' | 'markdown' | 'latex';
 
@@ -87,8 +94,29 @@ const SHORT_FALLBACK_LEN = 2;
 const MAX_FALLBACK_SEARCH_LEN = 100;
 const FALLBACK_SEARCH_RATIO = 3;
 
+const reverseSuperscripts: Record<string, string> = Object.fromEntries(
+  Object.entries(SUPERSCRIPTS).map(([k, v]) => [v, k])
+);
+const reverseSubscripts: Record<string, string> = Object.fromEntries(
+  Object.entries(SUBSCRIPTS).map(([k, v]) => [v, k])
+);
+
 const normalizeForComparison = (str: string): string => {
   return str
+    .split('')
+    .map((char) => {
+      if (reverseSuperscripts[char]) {
+        return reverseSuperscripts[char];
+      }
+      if (reverseSubscripts[char]) {
+        return reverseSubscripts[char];
+      }
+      if (unicodeToLetterMap[char]) {
+        return unicodeToLetterMap[char];
+      }
+      return char;
+    })
+    .join('')
     .toLowerCase()
     .replace(/\\[a-zA-Z]+/g, '')
     .replace(/[^a-z0-9]/g, '');
@@ -353,7 +381,8 @@ const convertMarkdown = (plainText: string): ConvertedOutputs => {
 
 const convertMisc = (plainText: string): string => {
   // process displayStyle, which shows up from wikipedia
-  return processDisplayStyle(plainText);
+  const normalized = plainText.replace(/\u00a0/g, ' ');
+  return processDisplayStyle(normalized);
 };
 
 export const convert = (
