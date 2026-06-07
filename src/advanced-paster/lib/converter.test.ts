@@ -39,6 +39,11 @@ describe('latexToText', () => {
       'sin(θ) ⟹ cos(θ)'
     );
   });
+
+  it('converts simeq and colon symbols', () => {
+    expect(latexToText('M \\simeq N')).toBe('M ≃ N');
+    expect(latexToText('f \\colon M')).toBe('f : M');
+  });
 });
 
 describe('converter', () => {
@@ -222,5 +227,18 @@ describe('converter', () => {
     };
     const result = convert(payload, 'auto');
     expect(result.plaintext).toContain('Euclidean space ℝ³ is orientable');
+  });
+
+  it('handles user exact paste with simeq and colon', () => {
+    const payload = {
+      plainText:
+        'Given two differentiable manifolds M and N, a continuously differentiable map f\\colon M→ N is a diffeomorphism if it is a bijection and its inverse f⁻¹\\colon N→ M is differentiable as well. If these functions are r times continuously differentiable, f is called a Cr-diffeomorphism.\n\nTwo manifolds M and N are diffeomorphic (usually denoted M\\simeq N) if there is a diffeomorphism f from M to N. Two Cr-differentiable manifolds are Cr-diffeomorphic if there is an r times continuously differentiable bijective map between them whose inverse is also r times continuously differentiable. A C¹-diffeomorphism is simply a diffeomorphism, and a C⁰-diffeomorphism is a homeomorphism.'
+    };
+    const result = convert(payload, 'auto');
+    expect(result.plaintext).toContain('map f: M→ N is a diffeomorphism');
+    expect(result.plaintext).toContain(
+      'its inverse f⁻¹: N→ M is differentiable'
+    );
+    expect(result.plaintext).toContain('denoted M≃ N');
   });
 });
