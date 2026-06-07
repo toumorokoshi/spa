@@ -179,7 +179,7 @@ describe('converter', () => {
 
     const resultMarkdown = convert(payload, 'markdown');
     expect(resultMarkdown.plaintext).toBe(
-      'U z₀ f(z)=\\vert z\\vert {\\vphantom {l}}²=z{\\bar {z}}'
+      'U z₀ f(z)=| z| {\\vphantom {l}}²=z{\\bar {z}}'
     );
   });
 
@@ -240,5 +240,36 @@ describe('converter', () => {
       'its inverse f⁻¹: N→ M is differentiable'
     );
     expect(result.plaintext).toContain('denoted M≃ N');
+  });
+
+  it('converts newly added mathematical symbols and ellipsis', () => {
+    expect(latexToText('x_1 \\cdots x_n')).toBe('x₁ ⋯ xₙ');
+    expect(latexToText('y_1 \\dots y_m')).toBe('y₁ … yₘ');
+    expect(latexToText('z_1 \\ldots z_k')).toBe('z₁ … zₖ');
+    expect(latexToText('\\langle x, y \\rangle')).toBe('⟨ x, y ⟩');
+    expect(latexToText('\\lfloor x \\rfloor')).toBe('⌊ x ⌋');
+    expect(latexToText('\\lceil y \\rceil')).toBe('⌈ y ⌉');
+    expect(latexToText('\\vert x \\vert')).toBe('| x |');
+    expect(latexToText('\\Vert y \\Vert')).toBe('‖ y ‖');
+    expect(latexToText('A \\triangleq B')).toBe('A ≜ B');
+    expect(latexToText('\\Box')).toBe('□');
+    expect(latexToText('f^\\prime')).toBe('f′');
+    expect(latexToText('\\Beta')).toBe('Β');
+  });
+
+  it('converts fractions, operatornames, and other structural/font macros', () => {
+    expect(latexToText('\\tfrac{1}{2} + \\dfrac{3}{4}')).toBe(
+      '(1)/(2) + (3)/(4)'
+    );
+    expect(latexToText('\\operatorname{sgn}(x)')).toBe('sgn(x)');
+    expect(latexToText('\\boldsymbol{v}')).toBe('v');
+    expect(latexToText('\\widehat{\\alpha}')).toBe('α');
+    expect(latexToText('\\vec{u} + \\vec v')).toBe('u + v');
+    expect(latexToText('\\underbrace{x+y}_{=z}')).toBe('x+y₌z');
+    expect(latexToText('\\stackrel{a}{b}')).toBe('b');
+    expect(latexToText('\\binom{n}{k}')).toBe('(n choose k)');
+    expect(latexToText('x \\pmod{p}')).toBe('x (mod p)');
+    expect(latexToText('y \\pmod p')).toBe('y (mod p)');
+    expect(latexToText('\\bigl( x \\bigr)')).toBe('( x )');
   });
 });

@@ -29,6 +29,9 @@ turndownService.use(gfm);
 
 const STRUCTURAL_MACROS = [
   'frac',
+  'tfrac',
+  'dfrac',
+  'cfrac',
   'textbf',
   'textit',
   'text',
@@ -38,7 +41,16 @@ const STRUCTURAL_MACROS = [
   'begin',
   'end',
   'mathbb',
-  'mathcal'
+  'mathcal',
+  'boldsymbol',
+  'bold',
+  'mathsf',
+  'operatorname',
+  'widehat',
+  'vec',
+  'underbrace',
+  'stackrel',
+  'pmod'
 ];
 
 const getLatexIndicators = (): string[] => {

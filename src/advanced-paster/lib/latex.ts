@@ -6,6 +6,9 @@ export const LATEX_TO_UNICODE: Record<string, string> = {
   '\\angle': '∠',
   '\\approx': '≈',
   '\\arccos': 'arccos',
+  '\\arccot': 'arccot',
+  '\\arccsc': 'arccsc',
+  '\\arcsec': 'arcsec',
   '\\arcsin': 'arcsin',
   '\\arctan': 'arctan',
   '\\arg': 'arg',
@@ -14,12 +17,15 @@ export const LATEX_TO_UNICODE: Record<string, string> = {
   '\\backsim': '∽',
   '\\backsimeq': '⋍',
   '\\beta': 'β',
+  '\\Beta': 'Β',
   '\\beth': 'ℶ',
   '\\bot': '⊥',
+  '\\Box': '□',
   '\\bowtie': '⋈',
   '\\bullet': '•',
   '\\cap': '∩',
   '\\cdot': '⋅',
+  '\\cdots': '⋯',
   '\\chi': 'χ',
   '\\circ': '∘',
   '\\colon': ':',
@@ -37,12 +43,14 @@ export const LATEX_TO_UNICODE: Record<string, string> = {
   '\\dashv': '⊣',
   '\\ddagger': '‡',
   '\\deg': 'deg',
+  '\\ddots': '⋱',
   '\\delta': 'δ',
   '\\Delta': 'Δ',
   '\\det': 'det',
   '\\diamond': '⋄',
   '\\dim': 'dim',
   '\\div': '÷',
+  '\\dots': '…',
   '\\doteq': '≐',
   '\\downarrow': '↓',
   '\\Downarrow': '⇓',
@@ -83,6 +91,9 @@ export const LATEX_TO_UNICODE: Record<string, string> = {
   '\\lambda': 'λ',
   '\\Lambda': 'Λ',
   '\\land': '∧',
+  '\\langle': '⟨',
+  '\\lceil': '⌈',
+  '\\ldots': '…',
   '\\le': '≤',
   '\\leftarrow': '←',
   '\\Leftarrow': '⇐',
@@ -91,6 +102,7 @@ export const LATEX_TO_UNICODE: Record<string, string> = {
   '\\leftrightarrow': '↔',
   '\\Leftrightarrow': '⇔',
   '\\leq': '≤',
+  '\\lfloor': '⌊',
   '\\lg': 'lg',
   '\\lim': 'lim',
   '\\liminf': 'liminf',
@@ -174,6 +186,7 @@ export const LATEX_TO_UNICODE: Record<string, string> = {
   '\\neq': '≠',
   '\\nexists': '∄',
   '\\ni': '∋',
+  '\\not': '¬',
   '\\notin': '∉',
   '\\notsubset': '⊄',
   '\\notsubseteq': '⊈',
@@ -198,12 +211,17 @@ export const LATEX_TO_UNICODE: Record<string, string> = {
   '\\pi': 'π',
   '\\Pi': 'Π',
   '\\pm': '±',
+  '\\Pr': 'Pr',
   '\\prec': '≺',
   '\\preceq': '⪯',
+  '\\prime': '′',
   '\\prod': '∏',
   '\\propto': '∝',
   '\\psi': 'ψ',
   '\\Psi': 'Ψ',
+  '\\rangle': '⟩',
+  '\\rceil': '⌉',
+  '\\rfloor': '⌋',
   '\\Re': 'ℜ',
   '\\real': 'ℜ',
   '\\rho': 'ρ',
@@ -215,6 +233,7 @@ export const LATEX_TO_UNICODE: Record<string, string> = {
   '\\searrow': '↘',
   '\\sec': 'sec',
   '\\setminus': '∖',
+  '\\sgn': 'sgn',
   '\\sigma': 'σ',
   '\\Sigma': 'Σ',
   '\\sim': '∼',
@@ -248,6 +267,7 @@ export const LATEX_TO_UNICODE: Record<string, string> = {
   '\\times': '×',
   '\\to': '→',
   '\\top': '⊤',
+  '\\triangleq': '≜',
   '\\uparrow': '↑',
   '\\Uparrow': '⇑',
   '\\updownarrow': '↕',
@@ -263,7 +283,10 @@ export const LATEX_TO_UNICODE: Record<string, string> = {
   '\\varsigma': 'ς',
   '\\vartheta': 'ϑ',
   '\\vdash': '⊢',
+  '\\vdots': '⋮',
   '\\vee': '∨',
+  '\\Vert': '‖',
+  '\\vert': '|',
   '\\wedge': '∧',
   '\\wp': '℘',
   '\\wr': '≀',
@@ -383,7 +406,7 @@ const convertSuperscriptsAndSubscripts = (text: string): string => {
 export const latexToText = (latex: string): string => {
   const normalized = latex
     .replace(
-      /\\(mathbb|mathcal|mathbf|mathrm|mathit|text|textbf|textit|frac)\s+({)/g,
+      /\\(mathbb|mathcal|mathbf|mathrm|mathit|text|textbf|textit|frac|tfrac|dfrac|cfrac|boldsymbol|bold|mathsf|operatorname|widehat|vec|underbrace)\s+({)/g,
       '\\$1$2'
     )
     .replace(/\s*\^\s*/g, '^')
@@ -395,17 +418,31 @@ export const latexToText = (latex: string): string => {
       const regex = new RegExp(`\\\\${escaped}(?![a-zA-Z])`, 'g');
       return text.replace(regex, unicode);
     }, normalized)
-    .replace(/\\(textbf|textit|text|mathrm|mathbf|mathit){([^}]+)}/g, '$2')
+    .replace(
+      /\\(textbf|textit|text|mathrm|mathbf|mathit|boldsymbol|bold|mathsf|operatorname|widehat|underbrace|vec){([^}]+)}/g,
+      '$2'
+    )
+    .replace(/\\vec\s*([a-zA-Z0-9])/g, '$1')
+    .replace(/\\stackrel{([^}]+)}{([^}]+)}/g, '$2')
+    .replace(/\\binom{([^}]+)}{([^}]+)}/g, '($1 choose $2)')
+    .replace(/\\pmod\s*{([^}]+)}/g, '(mod $1)')
+    .replace(/\\pmod\s+([a-zA-Z0-9]+)/g, '(mod $1)')
+    .replace(
+      /\\(?:biggr|biggl|Biggl|Biggr|bigl|bigr|Bigl|Bigr|big|Big)\s*/g,
+      ''
+    )
     .replace(/\$\$?/g, '')
     .replace(/\\\[|\\\]|\\\(|\\\)/g, '')
-    .replace(/\\frac{([^}]+)}{([^}]+)}/g, '($1)/($2)')
+    .replace(/\\(?:frac|tfrac|dfrac|cfrac){([^}]+)}{([^}]+)}/g, '($1)/($2)')
     .replace(/\\{/g, '{')
     .replace(/\\}/g, '}')
     .replace(/\\begin{([^}]+)}/g, '')
     .replace(/\\end{([^}]+)}/g, '')
     .trim();
 
-  return convertSuperscriptsAndSubscripts(converted);
+  return convertSuperscriptsAndSubscripts(converted)
+    .replace(/\^′/g, '′')
+    .replace(/\^{′}/g, '′');
 };
 
 const MAX_SHORT_LATEX_LENGTH = 4;
