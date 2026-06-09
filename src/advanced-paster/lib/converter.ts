@@ -50,7 +50,8 @@ const STRUCTURAL_MACROS = [
   'vec',
   'underbrace',
   'stackrel',
-  'pmod'
+  'pmod',
+  'xrightarrow'
 ];
 
 const getLatexIndicators = (): string[] => {

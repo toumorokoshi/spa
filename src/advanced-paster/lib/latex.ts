@@ -410,7 +410,13 @@ export const latexToText = (latex: string): string => {
       '\\$1$2'
     )
     .replace(/\s*\^\s*/g, '^')
-    .replace(/\s*_\s*/g, '_');
+    .replace(/\s*_\s*/g, '_')
+    .replace(
+      /\\xrightarrow\s*(?:\[([^\]]*)\])?\s*{([^}]+)}/g,
+      (_, below, above) => {
+        return below ? `──(${above})──→[${below}]` : `──(${above})──→`;
+      }
+    );
 
   const converted = Object.entries(LATEX_TO_UNICODE)
     .reduce((text, [symbol, unicode]) => {

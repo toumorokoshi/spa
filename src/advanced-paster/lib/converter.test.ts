@@ -271,5 +271,18 @@ describe('converter', () => {
     expect(latexToText('x \\pmod{p}')).toBe('x (mod p)');
     expect(latexToText('y \\pmod p')).toBe('y (mod p)');
     expect(latexToText('\\bigl( x \\bigr)')).toBe('( x )');
+    expect(latexToText('\\xrightarrow{d^0}')).toBe('──(d⁰)──→');
+    expect(latexToText('\\xrightarrow[g]{f}')).toBe('──(f)──→[g]');
+  });
+
+  it('handles user exact paste with xrightarrow in cochain complex', () => {
+    const payload = {
+      plainText:
+        'The cochain complex (A• ,d• ) is the dual notion to a chain complex. It consists of a sequence of abelian groups or modules ⋯ ,A⁰,A¹,A²,… connected by homomorphisms dⁿ:Aⁿ→ Aⁿ⁺¹ satisfying dⁿ⁺¹∘ dⁿ=0. The cochain complex may be written out in a similar fashion to the chain complex:\n⋯ \\xrightarrow {d⁻¹} A⁰\\xrightarrow {d⁰} A¹\\xrightarrow {d¹} A²\\xrightarrow {d²} A³\\xrightarrow {d³} A⁴\\xrightarrow {d⁴} ⋯'
+    };
+    const result = convert(payload, 'auto');
+    expect(result.plaintext).toContain(
+      '⋯ ──(d⁻¹)──→ A⁰──(d⁰)──→ A¹──(d¹)──→ A²──(d²)──→ A³──(d³)──→ A⁴──(d⁴)──→ ⋯'
+    );
   });
 });
