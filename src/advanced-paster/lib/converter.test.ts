@@ -44,6 +44,11 @@ describe('latexToText', () => {
     expect(latexToText('M \\simeq N')).toBe('M ≃ N');
     expect(latexToText('f \\colon M')).toBe('f : M');
   });
+
+  it('converts over and div symbols', () => {
+    expect(latexToText('a \\over b')).toBe('a ÷ b');
+    expect(latexToText('\\div')).toBe('÷');
+  });
 });
 
 describe('converter', () => {
