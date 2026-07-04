@@ -151,6 +151,11 @@ const isDuplicate = (fallback: string, expected: string): boolean => {
   if (normFallback.length <= SHORT_FALLBACK_LEN) {
     return normFallback === normExpected;
   }
+  const maxLen = Math.max(normFallback.length, normExpected.length);
+  const minLen = Math.min(normFallback.length, normExpected.length);
+  if (maxLen > minLen * 2.0) {
+    return false;
+  }
   const prefixLen = getCommonPrefixLength(normFallback, normExpected);
   const requiredLen = Math.max(
     MIN_DEDUPLICATE_PREFIX_LEN,

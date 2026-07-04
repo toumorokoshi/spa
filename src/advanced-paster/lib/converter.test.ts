@@ -290,4 +290,15 @@ describe('converter', () => {
       '⋯ ──(d⁻¹)──→ A⁰──(d⁰)──→ A¹──(d¹)──→ A²──(d²)──→ A³──(d³)──→ A⁴──(d⁴)──→ ⋯'
     );
   });
+
+  it('handles the user paste that breaks advanced-paster', () => {
+    const payload = {
+      plainText:
+        'Let \nf\n:\nR\nn\n→\nR\nm\n :\\mathbb {R} ^{n}\\to \\mathbb {R} ^{m}}{\\textstyle \\mathbf {f} :\\mathbb {R} ^{n}\\to \\mathbb {R} ^{m}} be a function such that each of its first-order partial derivatives exists on \nR\nn\n{\\textstyle \\mathbb {R} ^{n}}.'
+    };
+    const result = convert(payload, 'auto');
+    expect(result.plaintext).toContain(
+      'Let f :\u211d\u207f\u2192 \u211d\u1d50'
+    );
+  });
 });
