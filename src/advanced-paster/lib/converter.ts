@@ -2,7 +2,9 @@ import TurndownService from 'turndown';
 import { marked } from 'marked';
 import {
   latexToText,
-  convertEmbeddedLatex,
+  latexToMathML,
+  convertEmbeddedLatexToUnicode,
+  convertEmbeddedLatexToMathML,
   getLatexCommands,
   SUPERSCRIPTS,
   SUBSCRIPTS,
@@ -217,9 +219,12 @@ const getCleanedBefore = (beforeWithoutFallback: string): string => {
 const processBlockReplacement = (
   before: string,
   after: string,
-  converted: string
+  converted: string,
+  unicodeConverted = converted
 ): string => {
-  const fallbackSuffix = converted ? findFallbackSuffix(before, converted) : '';
+  const fallbackSuffix = unicodeConverted
+    ? findFallbackSuffix(before, unicodeConverted)
+    : '';
   if (!fallbackSuffix) {
     return before + converted + after;
   }
@@ -231,7 +236,7 @@ const processBlockReplacement = (
   return cleanedBefore + converted + after;
 };
 
-const processDisplayStyle = (text: string): string => {
+const processDisplayStyleToUnicode = (text: string): string => {
   const pattern = /\{\s*\\(?:display|text|script|scriptscript)style/i;
   const match = pattern.exec(text);
   if (!match) {
@@ -247,12 +252,43 @@ const processDisplayStyle = (text: string): string => {
     const latexInner = text.slice(startIdx + matchLength, j - 1);
     const converted = latexToText(unwrapStyleCommands(latexInner));
     const processedText = processBlockReplacement(before, after, converted);
-    return processDisplayStyle(processedText);
+    return processDisplayStyleToUnicode(processedText);
   }
 
   const before = text.slice(0, startIdx + matchLength);
   const after = text.slice(startIdx + matchLength);
-  return before + processDisplayStyle(after);
+  return before + processDisplayStyleToUnicode(after);
+};
+
+const processDisplayStyleToMathML = (text: string): string => {
+  const pattern = /\{\s*\\(?:display|text|script|scriptscript)style/i;
+  const match = pattern.exec(text);
+  if (!match) {
+    return text;
+  }
+  const startIdx = match.index;
+  const matchLength = match[0].length;
+  const j = findMatchingBrace(text, startIdx + 1, 1);
+
+  if (j <= text.length && text[j - 1] === '}') {
+    const before = text.slice(0, startIdx);
+    const after = text.slice(j);
+    const latexInner = text.slice(startIdx + matchLength, j - 1);
+    const unescapedLatex = unwrapStyleCommands(latexInner);
+    const unicodeConverted = latexToText(unescapedLatex);
+    const mathmlConverted = latexToMathML(unescapedLatex, true);
+    const processedText = processBlockReplacement(
+      before,
+      after,
+      mathmlConverted,
+      unicodeConverted
+    );
+    return processDisplayStyleToMathML(processedText);
+  }
+
+  const before = text.slice(0, startIdx + matchLength);
+  const after = text.slice(startIdx + matchLength);
+  return before + processDisplayStyleToMathML(after);
 };
 
 const findMatchingSpan = (
@@ -344,7 +380,7 @@ const extractLatexFromMathHtml = (innerContent: string): string | null => {
   return null;
 };
 
-const cleanHtmlMath = (html: string): string => {
+const cleanHtmlMathToUnicode = (html: string): string => {
   const replaceFn = (innerContent: string): string => {
     const rawLatex = extractLatexFromMathHtml(innerContent);
     if (rawLatex !== null) {
@@ -362,13 +398,41 @@ const cleanHtmlMath = (html: string): string => {
   return replaceHtmlContainers(processedWiki, 'katex', replaceFn);
 };
 
+const cleanHtmlMathToMathML = (html: string): string => {
+  const replaceFn = (innerContent: string): string => {
+    const rawLatex = extractLatexFromMathHtml(innerContent);
+    if (rawLatex !== null) {
+      const cleanedLatex = unwrapStyleCommands(rawLatex);
+      const isDisplay = rawLatex.includes('\\displaystyle');
+      return latexToMathML(cleanedLatex, isDisplay);
+    }
+    return innerContent.replace(/<[^>]*>?/gm, '');
+  };
+
+  const processedWiki = replaceHtmlContainers(
+    html,
+    'mwe-math-element',
+    replaceFn
+  );
+  return replaceHtmlContainers(processedWiki, 'katex', replaceFn);
+};
+
 const convertHtml = (html: string): ConvertedOutputs => {
-  const cleanedHtml = cleanHtmlMath(html);
-  const processedHtml = convertEmbeddedLatex(cleanedHtml);
-  const markdown = turndownService.turndown(processedHtml);
+  const normalized = html.replace(/\u00a0/g, ' ');
+
+  const htmlWithMath = processDisplayStyleToMathML(normalized);
+  const cleanedHtmlForHtml = cleanHtmlMathToMathML(htmlWithMath);
+  const processedHtmlForHtml = convertEmbeddedLatexToMathML(cleanedHtmlForHtml);
+
+  const htmlWithMathText = processDisplayStyleToUnicode(normalized);
+  const cleanedHtmlForText = cleanHtmlMathToUnicode(htmlWithMathText);
+  const processedHtmlForText =
+    convertEmbeddedLatexToUnicode(cleanedHtmlForText);
+
+  const markdown = turndownService.turndown(processedHtmlForText);
 
   // Remove <style>...</style> blocks, <meta> tags, <font> tags, and styling attributes
-  const cleanHtml = processedHtml
+  const cleanHtml = processedHtmlForHtml
     .replace(/<style[^>]*>.*?<\/style>/gis, '')
     .replace(/<meta[^>]*>/gis, '')
     .replace(/<\/?font[^>]*>/gis, '')
@@ -377,30 +441,46 @@ const convertHtml = (html: string): ConvertedOutputs => {
       ''
     );
 
-  const plaintext = processedHtml.replace(/<[^>]*>?/gm, '').trim();
+  const plaintext = processedHtmlForText.replace(/<[^>]*>?/gm, '').trim();
   return { html: cleanHtml, markdown, plaintext };
 };
 
 const convertLatex = (plainText: string): ConvertedOutputs => {
-  const plaintext = latexToText(plainText);
+  const normalized = plainText.replace(/\u00a0/g, ' ');
+  const textWithMath = processDisplayStyleToUnicode(normalized);
+  const plaintext = latexToText(textWithMath);
   const markdown = plaintext;
-  const html = `<p>${plaintext}</p>`;
+
+  const htmlWithMath = processDisplayStyleToMathML(normalized);
+  const hasLatexDelimiters = /\$|\\\[|\\\]|\\\(|\\\)/.test(htmlWithMath);
+  const html = hasLatexDelimiters
+    ? `<p>${convertEmbeddedLatexToMathML(htmlWithMath)}</p>`
+    : `<p>${latexToMathML(htmlWithMath, false)}</p>`;
+
   return { html, markdown, plaintext };
 };
 
 const convertMarkdown = (plainText: string): ConvertedOutputs => {
-  const processedMarkdown = convertEmbeddedLatex(plainText);
-  const markdown = processedMarkdown;
-  const htmlBody = marked.parse(markdown, { async: false }) as string;
-  const html = htmlBody.trim();
-  const plaintext = html.replace(/<[^>]*>?/gm, '').trim();
-  return { html, markdown, plaintext };
-};
-
-const convertMisc = (plainText: string): string => {
-  // process displayStyle, which shows up from wikipedia
   const normalized = plainText.replace(/\u00a0/g, ' ');
-  return processDisplayStyle(normalized);
+  const textWithMathText = processDisplayStyleToUnicode(normalized);
+  const processedMarkdownForText =
+    convertEmbeddedLatexToUnicode(textWithMathText);
+  const markdown = processedMarkdownForText;
+
+  const textWithMathHtml = processDisplayStyleToMathML(normalized);
+  const processedMarkdownForHtml =
+    convertEmbeddedLatexToMathML(textWithMathHtml);
+  const htmlBody = marked.parse(processedMarkdownForHtml, {
+    async: false
+  }) as string;
+  const html = htmlBody.trim();
+
+  const htmlBodyForText = marked.parse(processedMarkdownForText, {
+    async: false
+  }) as string;
+  const plaintext = htmlBodyForText.replace(/<[^>]*>?/gm, '').trim();
+
+  return { html, markdown, plaintext };
 };
 
 export const convert = (
@@ -408,7 +488,6 @@ export const convert = (
   format: InputFormat
 ): ConvertedOutputs => {
   const resolvedFormat = format === 'auto' ? detectFormat(payload) : format;
-  payload.plainText = convertMisc(payload.plainText);
 
   if (resolvedFormat === 'html') {
     return convertHtml(payload.htmlText || payload.plainText);

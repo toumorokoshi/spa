@@ -1,5 +1,6 @@
 import { h, render } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
+import 'temml/dist/Temml-Local.css';
 import { OutputColumn } from './components/OutputColumn';
 import {
   convert,

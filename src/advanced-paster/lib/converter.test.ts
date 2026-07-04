@@ -1,7 +1,7 @@
 /* eslint-disable max-lines-per-function */
 import { describe, it, expect } from 'vitest';
 import { convert } from './converter';
-import { latexToText } from './latex';
+import { latexToText, latexToMathML } from './latex';
 
 describe('latexToText', () => {
   it('converts common symbols', () => {
@@ -51,6 +51,20 @@ describe('latexToText', () => {
   });
 });
 
+describe('latexToMathML', () => {
+  it('converts latex math expressions to MathML using Temml', () => {
+    expect(latexToMathML('\\alpha')).toContain('<math>');
+    expect(latexToMathML('\\alpha')).toContain('<mi>α</mi>');
+    expect(latexToMathML('\\alpha')).toContain(
+      'annotation encoding="application/x-tex">\\alpha</annotation>'
+    );
+  });
+
+  it('supports displayMode option', () => {
+    expect(latexToMathML('\\beta', true)).toContain('display="block"');
+  });
+});
+
 describe('converter', () => {
   it('auto-detects LaTeX format using new math indicators', () => {
     const payload = {
@@ -91,7 +105,9 @@ describe('converter', () => {
 
     const result = convert(payload, 'auto');
     expect(result.plaintext).toBe('α × β');
-    expect(result.html).toBe('<p>α × β</p>');
+    expect(result.html).toBe(
+      '<p><math display="block" class="tml-display" style="display:block math;"><semantics><mrow><mi>α</mi><mo>×</mo><mi>β</mi></mrow><annotation encoding="application/x-tex"> \\alpha \\times \\beta </annotation></semantics></math></p>'
+    );
     expect(result.markdown).toBe('α × β');
   });
 
@@ -113,7 +129,9 @@ describe('converter', () => {
     const result = convert(payload, 'auto');
     expect(result.plaintext).toBe('a, b ∈ G, a ∘ b ∈ G.');
     expect(result.markdown).toBe('a, b ∈ G, a ∘ b ∈ G.');
-    expect(result.html).toBe('<p>a, b ∈ G, a ∘ b ∈ G.</p>');
+    expect(result.html).toBe(
+      '<p><math><semantics><mrow><mi>a</mi><mo separator="true">,</mo><mi>b</mi><mo>∈</mo><mi>G</mi></mrow><annotation encoding="application/x-tex">a, b \\in G</annotation></semantics></math>, <math><semantics><mrow><mi>a</mi><mo>∘</mo><mi>b</mi><mo>∈</mo><mi>G</mi></mrow><annotation encoding="application/x-tex">a \\circ b \\in G</annotation></semantics></math>.</p>'
+    );
   });
 
   it('converts embedded LaTeX inside Markdown', () => {
@@ -125,7 +143,7 @@ describe('converter', () => {
     expect(result.plaintext).toBe('Let a, b ∈ G be elements, then a ∘ b ∈ G.');
     expect(result.markdown).toBe('Let a, b ∈ G be elements, then a ∘ b ∈ G.');
     expect(result.html).toBe(
-      '<p>Let a, b ∈ G be elements, then a ∘ b ∈ G.</p>'
+      '<p>Let <math><semantics><mrow><mi>a</mi><mo separator="true">,</mo><mi>b</mi><mo>∈</mo><mi>G</mi></mrow><annotation encoding="application/x-tex">a, b \\in G</annotation></semantics></math> be elements, then <math><semantics><mrow><mi>a</mi><mo>∘</mo><mi>b</mi><mo>∈</mo><mi>G</mi></mrow><annotation encoding="application/x-tex">a \\circ b \\in G</annotation></semantics></math>.</p>'
     );
   });
 
@@ -148,7 +166,9 @@ describe('converter', () => {
     const result = convert(payload, 'auto');
     expect(result.plaintext).toBe('ℝ ∖ {0}');
     expect(result.markdown).toBe('ℝ ∖ {0}');
-    expect(result.html).toBe('<p>ℝ ∖ {0}</p>');
+    expect(result.html).toBe(
+      '<p><math><semantics><mrow><mi>ℝ</mi><mo>∖</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\\mathbb{R} \\setminus {0}</annotation></semantics></math></p>'
+    );
   });
 
   it('does not strip HTML tables', () => {

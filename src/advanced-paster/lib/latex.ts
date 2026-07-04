@@ -1,3 +1,5 @@
+import temml from 'temml';
+
 // A best-effort mapping of LaTeX symbols to their closest Unicode equivalent.
 export const LATEX_TO_UNICODE: Record<string, string> = {
   '\\aleph': 'ℵ',
@@ -469,11 +471,31 @@ export const latexToText = (latex: string): string => {
 const MAX_SHORT_LATEX_LENGTH = 4;
 
 /**
+ * Converts a single LaTeX math expression into a MathML block using Temml.
+ */
+export const latexToMathML = (latex: string, displayMode = false): string => {
+  try {
+    return temml.renderToString(latex, {
+      displayMode,
+      annotate: true,
+      throwOnError: false
+    });
+  } catch (e) {
+    console.error('Temml error:', e);
+    const escaped = latex
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    return `<math><mtext>${escaped}</mtext></math>`;
+  }
+};
+
+/**
  * Parses a string containing embedded LaTeX math expressions (inside $...$, $$...$$,
  * \(...\), and \[...\]) and converts those segments to their Unicode equivalents.
  * Employs strict heuristics on inline dollar signs to avoid matching currency strings (e.g., $10).
  */
-export const convertEmbeddedLatex = (text: string): string => {
+export const convertEmbeddedLatexToUnicode = (text: string): string => {
   // 1. Process display math blocks: $$ ... $$
   const step1 = text.replace(/\$\$([\s\S]*?)\$\$/g, (_, content) => {
     return latexToText(content);
@@ -519,6 +541,59 @@ export const convertEmbeddedLatex = (text: string): string => {
     }
 
     // Default to keeping the original if it doesn't meet the math criteria
+    return match;
+  });
+};
+
+/**
+ * Parses a string containing embedded LaTeX math expressions and converts those
+ * segments to MathML strings using Temml.
+ */
+export const convertEmbeddedLatexToMathML = (text: string): string => {
+  // 1. Process display math blocks: $$ ... $$
+  const step1 = text.replace(/\$\$([\s\S]*?)\$\$/g, (_, content) => {
+    return latexToMathML(content, true);
+  });
+
+  // 2. Process display math blocks: \[ ... \]
+  const step2 = step1.replace(/\\\[([\s\S]*?)\\\]/g, (_, content) => {
+    return latexToMathML(content, true);
+  });
+
+  // 3. Process inline math blocks: \( ... \)
+  const step3 = step2.replace(/\\\(([\s\S]*?)\\\)/g, (_, content) => {
+    return latexToMathML(content, false);
+  });
+
+  // 4. Process inline math blocks: $ ... $
+  const inlineMathRegex = /\$([^$\n]+?)\$/g;
+  return step3.replace(inlineMathRegex, (match, content) => {
+    const trimmed = content.trim();
+
+    // If it contains a backslash, it's definitely LaTeX
+    if (trimmed.includes('\\')) {
+      return latexToMathML(content, false);
+    }
+
+    // Check for single variable or short expression (e.g., $x$, $a$, $G$, $x_1$)
+    if (trimmed.length <= MAX_SHORT_LATEX_LENGTH) {
+      return latexToMathML(content, false);
+    }
+
+    // Check for common English words that indicate regular text
+    const commonWords =
+      /\b(and|or|the|costs|price|sale|for|from|with|has|are|was|were|buy|pay|item|total|is|of|in|to|that|this|at|on|by|an)\b/i;
+    if (commonWords.test(trimmed)) {
+      return match;
+    }
+
+    // Check for mathematical operators or symbols
+    const MATH_OPERATORS = ['=', '<', '>', '+', '-', '*', '/', '^', '_'];
+    const hasMathOperators = MATH_OPERATORS.some((op) => trimmed.includes(op));
+    if (hasMathOperators) {
+      return latexToMathML(content, false);
+    }
+
     return match;
   });
 };
