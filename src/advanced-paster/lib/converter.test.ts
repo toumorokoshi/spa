@@ -410,4 +410,23 @@ Even more concisely, a vector space is a module over a field.[7]`;
     expect(result.plaintext).not.toContain('(\n−');
     expect(result.plaintext).toContain('(-1)v =-v');
   });
+
+  it('handles Wikipedia style math paste preserving matrix columns, HTML entities, and block display mode', () => {
+    const payload = {
+      plainText: 'latex test',
+      htmlText:
+        '<p>Formula: <span class="mwe-math-element mwe-math-element-block"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" alttext="{\\displaystyle \\begin{matrix} 1 &amp; 2 \\\\ 3 &amp; 4 \\end{matrix}}"><semantics><mrow>...</mrow><annotation encoding="application/x-tex">{\\displaystyle \\begin{matrix} 1 &amp; 2 \\\\ 3 &amp; 4 \\end{matrix}}</annotation></semantics></math></span></p>'
+    };
+    const result = convert(payload, 'html');
+    // Ensure display="block" is preserved / detected
+    expect(result.html).toContain('display="block"');
+    expect(result.html).toContain('class="tml-display"');
+    // Ensure HTML entities are decoded in MathML body cells (cell values 2 and 4 are rendered properly)
+    expect(result.html).toContain('<mn>2</mn></mtd>');
+    expect(result.html).toContain('<mn>4</mn></mtd>');
+    // Ensure styles inside mtd elements are preserved (e.g. padding)
+    expect(result.html).toContain(
+      'style="padding-left:0em;padding-right:5.9776pt;"'
+    );
+  });
 });

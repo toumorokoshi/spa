@@ -321,7 +321,7 @@ const findMatchingSpan = (
 const replaceHtmlContainers = (
   html: string,
   className: string,
-  replaceFn: (innerContent: string) => string
+  replaceFn: (innerContent: string, startTag: string) => string
 ): string => {
   const startPattern = new RegExp(
     `<span[^>]*class="[^"]*${className}[^"]*"[^>]*>`,
@@ -343,7 +343,7 @@ const replaceHtmlContainers = (
     const after = html.slice(j);
     return (
       before +
-      replaceFn(innerContent) +
+      replaceFn(innerContent, startTag) +
       replaceHtmlContainers(after, className, replaceFn)
     );
   }
@@ -372,27 +372,40 @@ const unwrapStyleCommands = (text: string): string => {
   return before + unwrapStyleCommands(after);
 };
 
+const decodeHtmlEntities = (str: string): string => {
+  return (
+    str
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      // eslint-disable-next-line quotes
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, ' ')
+  );
+};
+
 const extractLatexFromMathHtml = (innerContent: string): string | null => {
   const annotationMatch = /<annotation[^>]*>([\s\S]*?)<\/annotation>/i.exec(
     innerContent
   );
   if (annotationMatch) {
-    return annotationMatch[1].trim();
+    return decodeHtmlEntities(annotationMatch[1].trim());
   }
   const mathMatch = /<math[^>]*alttext="([^"]+)"/i.exec(innerContent);
   if (mathMatch) {
-    return mathMatch[1].trim();
+    return decodeHtmlEntities(mathMatch[1].trim());
   }
   const imgMatch = /<img[^>]*alt="([^"]+)"/i.exec(innerContent);
   if (imgMatch) {
-    return imgMatch[1].trim();
+    return decodeHtmlEntities(imgMatch[1].trim());
   }
   return null;
 };
 
 const replaceMathTags = (
   html: string,
-  replaceFn: (innerContent: string) => string
+  replaceFn: (innerContent: string, startTag: string) => string
 ): string => {
   const startPattern = /<math[^>]*>/i;
   const match = startPattern.exec(html);
@@ -401,13 +414,28 @@ const replaceMathTags = (
   }
   const startIdx = match.index;
   const startTag = match[0];
+
+  if (startTag.includes('data-processed="true"')) {
+    const endTag = '</math>';
+    const endIdx = html.indexOf(endTag, startIdx + startTag.length);
+    if (endIdx >= 0) {
+      const before = html.slice(0, startIdx + startTag.length);
+      const after = html.slice(startIdx + startTag.length);
+      return before + replaceMathTags(after, replaceFn);
+    }
+  }
+
   const endTag = '</math>';
   const endIdx = html.indexOf(endTag, startIdx + startTag.length);
   if (endIdx >= 0) {
     const before = html.slice(0, startIdx);
     const innerContent = html.slice(startIdx + startTag.length, endIdx);
     const after = html.slice(endIdx + endTag.length);
-    return before + replaceFn(innerContent) + replaceMathTags(after, replaceFn);
+    const replacement = replaceFn(innerContent, startTag).replace(
+      /<math/i,
+      '<math data-processed="true"'
+    );
+    return before + replacement + replaceMathTags(after, replaceFn);
   }
   const before = html.slice(0, startIdx + startTag.length);
   const after = html.slice(startIdx + startTag.length);
@@ -438,16 +466,21 @@ const cleanHtmlMathToUnicode = (html: string): string => {
     'katex',
     replaceFn
   );
-  return replaceMathTags(processedKatex, replaceFn);
+  const result = replaceMathTags(processedKatex, replaceFn);
+  return result.replace(/\s*data-processed="true"/g, '');
 };
 
 const cleanHtmlMathToMathML = (html: string): string => {
-  const replaceFn = (innerContent: string): string => {
+  const replaceFn = (innerContent: string, startTag: string): string => {
     const rawLatex = extractLatexFromMathHtml(innerContent);
     if (rawLatex !== null) {
       const cleanedLatex = unwrapStyleCommands(rawLatex);
-      const isDisplay = rawLatex.includes('\\displaystyle');
-      return latexToMathML(cleanedLatex, isDisplay);
+      const isDisplay =
+        rawLatex.includes('\\displaystyle') ||
+        startTag.includes('display="block"') ||
+        startTag.includes('mwe-math-element-block');
+      const mathml = latexToMathML(cleanedLatex, isDisplay);
+      return mathml.replace(/<math/i, '<math data-processed="true"');
     }
     return innerContent.replace(/<[^>]*>?/gm, '');
   };
@@ -462,7 +495,8 @@ const cleanHtmlMathToMathML = (html: string): string => {
     'katex',
     replaceFn
   );
-  return replaceMathTags(processedKatex, replaceFn);
+  const result = replaceMathTags(processedKatex, replaceFn);
+  return result.replace(/\s*data-processed="true"/g, '');
 };
 
 const convertHtml = (html: string): ConvertedOutputs => {
@@ -484,7 +518,18 @@ const convertHtml = (html: string): ConvertedOutputs => {
   const markdown = turndownService.turndown(processedHtmlForText);
 
   // Remove <style>...</style> blocks, <meta> tags, <font> tags, and styling attributes
-  const cleanHtml = processedHtmlForHtml
+  // Extract math blocks first to preserve their attributes (class, style, etc.)
+  const mathBlocks: string[] = [];
+  const withPlaceholders = processedHtmlForHtml.replace(
+    /<math[^>]*>[\s\S]*?<\/math>/gi,
+    (match) => {
+      const placeholder = `__MATH_BLOCK_PLACEHOLDER_${mathBlocks.length}__`;
+      mathBlocks.push(match);
+      return placeholder;
+    }
+  );
+
+  const cleanedRest = withPlaceholders
     .replace(/<style[^>]*>.*?<\/style>/gis, '')
     .replace(/<meta[^>]*>/gis, '')
     .replace(/<\/?font[^>]*>/gis, '')
@@ -492,6 +537,10 @@ const convertHtml = (html: string): ConvertedOutputs => {
       /\s+(style|class|id|color|bgcolor|align|valign|width|height)=("[^"]*"|'[^']*'|[^\s>]+)/gi,
       ''
     );
+
+  const cleanHtml = mathBlocks.reduce((htmlText, block, index) => {
+    return htmlText.replace(`__MATH_BLOCK_PLACEHOLDER_${index}__`, block);
+  }, cleanedRest);
 
   const plaintext = processedHtmlForText.replace(/<[^>]*>?/gm, '').trim();
   return { html: cleanHtml, markdown, plaintext };
