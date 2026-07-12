@@ -463,9 +463,11 @@ const convertLatex = (plainText: string): ConvertedOutputs => {
 
   const htmlWithMath = processDisplayStyleToMathML(normalized);
   const hasLatexDelimiters = /\$|\\\[|\\\]|\\\(|\\\)/.test(htmlWithMath);
-  const html = hasLatexDelimiters
-    ? `<p>${convertEmbeddedLatexToMathML(htmlWithMath)}</p>`
-    : `<p>${latexToMathML(htmlWithMath, false)}</p>`;
+  const hasMathML = htmlWithMath.includes('<math');
+  const html =
+    hasLatexDelimiters || hasMathML
+      ? `<p>${convertEmbeddedLatexToMathML(htmlWithMath)}</p>`
+      : `<p>${latexToMathML(htmlWithMath, false)}</p>`;
 
   return { html, markdown, plaintext };
 };
