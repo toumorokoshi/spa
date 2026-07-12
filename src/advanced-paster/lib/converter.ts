@@ -174,24 +174,34 @@ const hasWordBoundary = (before: string, suffixIndex: number): boolean => {
   return !/[a-zA-Z0-9]/.test(prevChar);
 };
 
+const isCandidateMatch = (
+  before: string,
+  candidate: string,
+  index: number,
+  converted: string
+): boolean => {
+  return (
+    candidate.trim() !== '' &&
+    !/\s/.test(candidate[0]) &&
+    isDuplicate(candidate, converted) &&
+    hasWordBoundary(before, index)
+  );
+};
+
 const findFallbackSuffixRecursive = (
   before: string,
   converted: string,
   index: number,
-  minIndex: number
+  maxIndex: number
 ): string => {
-  if (index < minIndex) {
+  if (index > maxIndex) {
     return '';
   }
   const candidate = before.slice(index);
-  if (
-    candidate.trim() &&
-    isDuplicate(candidate, converted) &&
-    hasWordBoundary(before, index)
-  ) {
+  if (isCandidateMatch(before, candidate, index, converted)) {
     return candidate;
   }
-  return findFallbackSuffixRecursive(before, converted, index - 1, minIndex);
+  return findFallbackSuffixRecursive(before, converted, index + 1, maxIndex);
 };
 
 const findFallbackSuffix = (before: string, converted: string): string => {
@@ -202,8 +212,8 @@ const findFallbackSuffix = (before: string, converted: string): string => {
   return findFallbackSuffixRecursive(
     before,
     converted,
-    before.length - 1,
-    before.length - maxSearchLen
+    before.length - maxSearchLen,
+    before.length - 1
   );
 };
 

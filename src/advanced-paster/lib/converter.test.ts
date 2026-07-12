@@ -321,4 +321,93 @@ describe('converter', () => {
       'Let f :\u211d\u207f\u2192 \u211d\u1d50'
     );
   });
+
+  it('handles Wikipedia vector space copy-paste math and does not leave hanging brackets', () => {
+    const userText = `A vector space over a field F is a non-empty set V together with a binary operation and a binary function that satisfy the eight axioms listed below. In this context, the elements of V are commonly called vectors, and the elements of F are called scalars.[2]
+
+The binary operation, called vector addition or simply addition assigns to any two vectors v and w in V a third vector in V which is commonly written as v + w, and called the sum of these two vectors.
+The binary function, called scalar multiplication, assigns to any scalar a in F and any vector v in V another vector in V, which is denoted av.[nb 2]
+To have a vector space, the eight following axioms must be satisfied for every u, v and w in V, and a and b in F.[3]
+
+Vector axioms
+Axiom	Statement
+Associativity of vector addition	u + (v + w) = (u + v) + w
+Commutativity of vector addition	u + v = v + u
+Identity element of vector addition	There exists an element 0 ∈ V, called the zero vector, such that v + 0 = v for all v ∈ V.
+Inverse elements of vector addition	For every v ∈ V, there exists an element −v ∈ V, called the additive inverse of v, such that v + (−v) = 0.
+Compatibility of scalar multiplication with field multiplication	a(bv) = (ab)v [nb 3]
+Identity element of scalar multiplication	1v = v, where 1 denotes the multiplicative identity in F.
+Distributivity of scalar multiplication with respect to vector addition    	a(u + v) = au + av
+Distributivity of scalar multiplication with respect to field addition	(a + b)v = av + bv
+When the scalar field is the real numbers, the vector space is called a real vector space, and when the scalar field is the complex numbers, the vector space is called a complex vector space.[4] These two cases are the most common ones, but vector spaces with scalars in an arbitrary field F are also commonly considered. Such a vector space is called an F-vector space or a vector space over F.[5]
+
+An equivalent definition of a vector space can be given, which is much more concise but less elementary: the first four axioms (related to vector addition) say that a vector space is an abelian group under addition, and the four remaining axioms (related to the scalar multiplication) say that this operation defines a ring homomorphism from the field F into the endomorphism ring of this group.[6] Specifically, the distributivity of scalar multiplication with respect to vector addition means that multiplication by a scalar a is an endomorphism of the group. The remaining three axioms establish that the function that maps a scalar a to the multiplication by a is a ring homomorphism from the field to the endomorphism ring of the group.
+
+Subtraction of two vectors can be defined as
+v
+−
+w
+=
+v
++
+(
+−
+w
+)
+.
+{\\displaystyle \\mathbf {v} -\\mathbf {w} =\\mathbf {v} +(-\\mathbf {w} ).}
+
+Direct consequences of the axioms include that, for every 
+s
+∈
+F
+{\\displaystyle s\\in F} and 
+v
+∈
+V
+,
+{\\displaystyle \\mathbf {v} \\in V,} one has
+
+0
+v
+=
+0
+,
+{\\displaystyle 0\\mathbf {v} =\\mathbf {0} ,}
+s
+0
+=
+0
+,
+{\\displaystyle s\\mathbf {0} =\\mathbf {0} ,}
+(
+−
+1
+)
+v
+=
+−
+v
+,
+{\\displaystyle (-1)\\mathbf {v} =-\\mathbf {v} ,}
+s
+v
+=
+0
+{\\displaystyle s\\mathbf {v} =\\mathbf {0} } implies 
+s
+=
+0
+{\\displaystyle s=0} or 
+v
+=
+0
+.
+{\\displaystyle \\mathbf {v} =\\mathbf {0} .}
+Even more concisely, a vector space is a module over a field.[7]`;
+    const payload = { plainText: userText };
+    const result = convert(payload, 'auto');
+    expect(result.plaintext).not.toContain('(\n−');
+    expect(result.plaintext).toContain('(-1)v =-v');
+  });
 });
