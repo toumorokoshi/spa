@@ -390,6 +390,34 @@ const extractLatexFromMathHtml = (innerContent: string): string | null => {
   return null;
 };
 
+const replaceMathTags = (
+  html: string,
+  replaceFn: (innerContent: string) => string
+): string => {
+  const startPattern = /<math[^>]*>/i;
+  const match = startPattern.exec(html);
+  if (!match) {
+    return html;
+  }
+  const startIdx = match.index;
+  const startTag = match[0];
+  const endTag = '</math>';
+  const endIdx = html.indexOf(endTag, startIdx + startTag.length);
+  if (endIdx >= 0) {
+    const before = html.slice(0, startIdx);
+    const innerContent = html.slice(startIdx + startTag.length, endIdx);
+    const after = html.slice(endIdx + endTag.length);
+    return before + replaceFn(innerContent) + replaceMathTags(after, replaceFn);
+  }
+  const before = html.slice(0, startIdx + startTag.length);
+  const after = html.slice(startIdx + startTag.length);
+  return before + replaceMathTags(after, replaceFn);
+};
+
+const isHtml = (str: string): boolean => {
+  return /<[a-z/][\s\S]*>/i.test(str);
+};
+
 const cleanHtmlMathToUnicode = (html: string): string => {
   const replaceFn = (innerContent: string): string => {
     const rawLatex = extractLatexFromMathHtml(innerContent);
@@ -405,7 +433,12 @@ const cleanHtmlMathToUnicode = (html: string): string => {
     'mwe-math-element',
     replaceFn
   );
-  return replaceHtmlContainers(processedWiki, 'katex', replaceFn);
+  const processedKatex = replaceHtmlContainers(
+    processedWiki,
+    'katex',
+    replaceFn
+  );
+  return replaceMathTags(processedKatex, replaceFn);
 };
 
 const cleanHtmlMathToMathML = (html: string): string => {
@@ -424,17 +457,26 @@ const cleanHtmlMathToMathML = (html: string): string => {
     'mwe-math-element',
     replaceFn
   );
-  return replaceHtmlContainers(processedWiki, 'katex', replaceFn);
+  const processedKatex = replaceHtmlContainers(
+    processedWiki,
+    'katex',
+    replaceFn
+  );
+  return replaceMathTags(processedKatex, replaceFn);
 };
 
 const convertHtml = (html: string): ConvertedOutputs => {
   const normalized = html.replace(/\u00a0/g, ' ');
 
-  const htmlWithMath = processDisplayStyleToMathML(normalized);
+  const htmlWithMath = isHtml(normalized)
+    ? normalized
+    : processDisplayStyleToMathML(normalized);
   const cleanedHtmlForHtml = cleanHtmlMathToMathML(htmlWithMath);
   const processedHtmlForHtml = convertEmbeddedLatexToMathML(cleanedHtmlForHtml);
 
-  const htmlWithMathText = processDisplayStyleToUnicode(normalized);
+  const htmlWithMathText = isHtml(normalized)
+    ? normalized
+    : processDisplayStyleToUnicode(normalized);
   const cleanedHtmlForText = cleanHtmlMathToUnicode(htmlWithMathText);
   const processedHtmlForText =
     convertEmbeddedLatexToUnicode(cleanedHtmlForText);
