@@ -147,6 +147,18 @@ describe('converter', () => {
     );
   });
 
+  it('strips zero-width spaces during normalization to ensure correct LaTeX conversion', () => {
+    const payload = {
+      plainText:
+        '$\\m\u200bathbf{\\S\u200bigma} = \\s\u200bigma^2 \\m\u200bathbf{I}$'
+    };
+    const result = convert(payload, 'auto');
+    expect(result.plaintext).toBe('Σ = σ² I');
+    expect(result.markdown).toBe('Σ = σ² I');
+    expect(result.html).toContain('𝚺');
+    expect(result.html).toContain('𝐈');
+  });
+
   it('protects currency from incorrect LaTeX conversion in Markdown', () => {
     const payload = {
       plainText: 'This item costs $10 and that costs $20.'

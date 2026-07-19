@@ -499,8 +499,11 @@ const cleanHtmlMathToMathML = (html: string): string => {
   return result.replace(/\s*data-processed="true"/g, '');
 };
 
+const normalizeInput = (text: string): string =>
+  text.replace(/\u00a0/g, ' ').replace(/\u200b/g, '');
+
 const convertHtml = (html: string): ConvertedOutputs => {
-  const normalized = html.replace(/\u00a0/g, ' ');
+  const normalized = normalizeInput(html);
 
   const htmlWithMath = isHtml(normalized)
     ? normalized
@@ -547,7 +550,7 @@ const convertHtml = (html: string): ConvertedOutputs => {
 };
 
 const convertLatex = (plainText: string): ConvertedOutputs => {
-  const normalized = plainText.replace(/\u00a0/g, ' ');
+  const normalized = normalizeInput(plainText);
   const textWithMath = processDisplayStyleToUnicode(normalized);
   const plaintext = latexToText(textWithMath);
   const markdown = plaintext;
@@ -564,7 +567,7 @@ const convertLatex = (plainText: string): ConvertedOutputs => {
 };
 
 const convertMarkdown = (plainText: string): ConvertedOutputs => {
-  const normalized = plainText.replace(/\u00a0/g, ' ');
+  const normalized = normalizeInput(plainText);
   const textWithMathText = processDisplayStyleToUnicode(normalized);
   const processedMarkdownForText =
     convertEmbeddedLatexToUnicode(textWithMathText);

@@ -35,7 +35,7 @@ Depending on the resolved format, the input is processed through one of three pi
 
 Used when the input is HTML. It processes the payload (`payload.htmlText` or fallback `payload.plainText`) as follows:
 
-1. **Normalization**: Replaces non-breaking space characters (`\u00a0`) with standard spaces.
+1. **Normalization**: Replaces non-breaking space characters (`\u00a0`) with standard spaces and strips zero-width spaces (`\u200b`).
 2. **Pre-processing**: If the input does not contain HTML tags (checked via `isHtml`), it passes the text through `processDisplayStyleToMathML` and `processDisplayStyleToUnicode` to handle any raw block-style LaTeX before parsing.
 3. **Generating HTML Output**:
    - Invokes [cleanHtmlMathToMathML](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/converter.ts#L473), which finds MathML elements (in containers with classes like `katex` or `mwe-math-element`, or raw `<math>` tags), extracts raw LaTeX from their `<annotation>` tags, alttext, or image alt attributes, and re-renders them cleanly with Temml.
@@ -56,7 +56,7 @@ Used when the input is HTML. It processes the payload (`payload.htmlText` or fal
 
 Used when the input is LaTeX. It processes `payload.plainText`:
 
-1. **Normalization**: Replaces non-breaking spaces with standard spaces.
+1. **Normalization**: Replaces non-breaking spaces with standard spaces and strips zero-width spaces (`\u200b`).
 2. **Generating Plaintext and Markdown Outputs**:
    - Resolves display-style math blocks to Unicode using `processDisplayStyleToUnicode`.
    - Converts the entire LaTeX content into Unicode text using [latexToText](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/latex.ts#L423).
@@ -73,7 +73,7 @@ Used when the input is LaTeX. It processes `payload.plainText`:
 
 Used when the input is Markdown. It processes `payload.plainText`:
 
-1. **Normalization**: Replaces non-breaking spaces with standard spaces.
+1. **Normalization**: Replaces non-breaking spaces with standard spaces and strips zero-width spaces (`\u200b`).
 2. **Generating Markdown and Plaintext Outputs**:
    - Resolves display-style math blocks to Unicode (`processDisplayStyleToUnicode`).
    - Converts any embedded inline math blocks to Unicode using [convertEmbeddedLatexToUnicode](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/latex.ts#L498).
