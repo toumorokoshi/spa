@@ -160,4 +160,11 @@ To help debug issues where invisible Unicode characters (like `\u200b`, `\u200c`
   - `\u2060` -> `[WJ]` (Word Joiner)
   - `\u00ad` -> `[SHY]` (Soft Hyphen)
   - `\u00a0` -> `[NBSP]` (Non-Breaking Space)
-- Shows raw un-normalized values for both `payload.plainText` and `payload.htmlText` (if present) so that users can verify the exact structure of what was captured on paste.
+- Displays raw un-normalized clipboard data in both **unescaped** and **escaped** formats for both `plainText` and `htmlText` (if present) so that users can verify the exact structure of what was captured on paste.
+- Includes a scrollable **Character-by-Character Inspector** table:
+  - Lists every single character in the clipboard input by index.
+  - Shows its glyph or text marker representation.
+  - Shows its Unicode hex code point (e.g. `U+200C`).
+  - Provides a short description (e.g., "Zero-Width Non-Joiner (ZWNJ)", "Newline (LF)").
+  - Highlights hidden formatting characters using a light red background and text color to make them immediately stand out.
+  - Supports toggling analysis between `plainText` and `htmlText` if both are available.

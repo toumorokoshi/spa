@@ -9,6 +9,28 @@ import {
   ConvertedOutputs
 } from './lib/converter';
 
+const HEX_RADIX = 16;
+const HEX_PAD_LEN = 4;
+const CONTROL_MIN = 32;
+const CONTROL_MID_START = 127;
+const CONTROL_MID_END = 160;
+
+const SPECIAL_CHARS: Record<number, { name: string; char: string }> = {
+  0x200b: { name: 'Zero-Width Space (ZWSP)', char: '[ZWSP]' },
+  0x200c: { name: 'Zero-Width Non-Joiner (ZWNJ)', char: '[ZWNJ]' },
+  0x200d: { name: 'Zero-Width Joiner (ZWJ)', char: '[ZWJ]' },
+  0x200e: { name: 'Left-to-Right Mark (LRM)', char: '[LRM]' },
+  0x200f: { name: 'Right-to-Left Mark (RLM)', char: '[RLM]' },
+  0xfeff: { name: 'Byte Order Mark (BOM)', char: '[BOM]' },
+  0x2060: { name: 'Word Joiner (WJ)', char: '[WJ]' },
+  0x00ad: { name: 'Soft Hyphen (SHY)', char: '[SHY]' },
+  0x00a0: { name: 'Non-Breaking Space (NBSP)', char: '[NBSP]' },
+  0x000a: { name: 'Newline (LF)', char: '\\n' },
+  0x000d: { name: 'Carriage Return (CR)', char: '\\r' },
+  0x0009: { name: 'Tab', char: '\\t' },
+  0x0020: { name: 'Space', char: '[space]' }
+};
+
 const escapeInvisibleChars = (str: string | undefined): string => {
   if (!str) return '';
   return str
@@ -23,9 +45,322 @@ const escapeInvisibleChars = (str: string | undefined): string => {
     .replace(/\u00a0/g, '[NBSP]');
 };
 
+interface CharInfo {
+  index: number;
+  char: string;
+  codePoint: string;
+  name: string;
+}
+
+const isControlChar = (code: number): boolean =>
+  code < CONTROL_MIN || (code >= CONTROL_MID_START && code < CONTROL_MID_END);
+
+const getCharDetails = (
+  char: string,
+  code: number
+): { name: string; char: string } => {
+  if (SPECIAL_CHARS[code]) {
+    return SPECIAL_CHARS[code];
+  }
+  if (isControlChar(code)) {
+    return {
+      name: 'Control Character',
+      char: `[0x${code.toString(HEX_RADIX)}]`
+    };
+  }
+  return {
+    name: 'Character',
+    char
+  };
+};
+
+const analyzeCharacters = (str: string): CharInfo[] => {
+  return str.split('').map((char, index) => {
+    const codePointNum = char.charCodeAt(0);
+    const hex = `U+${codePointNum
+      .toString(HEX_RADIX)
+      .toUpperCase()
+      .padStart(HEX_PAD_LEN, '0')}`;
+    const details = getCharDetails(char, codePointNum);
+    return {
+      index,
+      char: details.char,
+      codePoint: hex,
+      name: details.name
+    };
+  });
+};
+
+interface OutputGridProps {
+  plainText: string;
+  html: string;
+  markdown: string;
+  plaintext: string;
+  copyPlainText: (text: string) => void;
+  copyRichText: (html: string) => void;
+}
+
+const OutputGrid = ({
+  plainText,
+  html,
+  markdown,
+  plaintext,
+  copyPlainText,
+  copyRichText
+}: OutputGridProps) => {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: '24px',
+        alignItems: 'stretch'
+      }}
+    >
+      <OutputColumn
+        title="Raw Format"
+        content={plainText}
+        onCopy={() => copyPlainText(plainText)}
+      />
+      <OutputColumn
+        title="Rendered HTML"
+        content={html}
+        onCopy={() => copyRichText(html)}
+        isHtmlRender
+      />
+      <OutputColumn
+        title="HTML Source"
+        content={html}
+        onCopy={() => copyPlainText(html)}
+      />
+      <OutputColumn
+        title="Markdown"
+        content={markdown}
+        onCopy={() => copyPlainText(markdown)}
+      />
+      <OutputColumn
+        title="Plaintext"
+        content={plaintext}
+        onCopy={() => copyPlainText(plaintext)}
+      />
+    </div>
+  );
+};
+
+interface DebugSectionProps {
+  payload: ClipboardDataPayload;
+  inspectTarget: 'plainText' | 'htmlText';
+  setInspectTarget: (t: 'plainText' | 'htmlText') => void;
+  copyPlainText: (text: string) => void;
+}
+
+const renderHtmlColumns = (
+  htmlText: string | undefined,
+  copyPlainText: (text: string) => void
+) => {
+  if (htmlText === undefined) {
+    return null;
+  }
+  return [
+    <OutputColumn
+      key="html-unescaped"
+      title="Raw htmlText (unescaped)"
+      content={htmlText}
+      onCopy={() => copyPlainText(htmlText)}
+    />,
+    <OutputColumn
+      key="html-escaped"
+      title="Raw htmlText (escaped)"
+      content={escapeInvisibleChars(htmlText)}
+      onCopy={() => copyPlainText(htmlText)}
+    />
+  ];
+};
+
+const renderInspectSelector = (
+  htmlText: string | undefined,
+  inspectTarget: 'plainText' | 'htmlText',
+  setInspectTarget: (t: 'plainText' | 'htmlText') => void
+) => {
+  if (htmlText === undefined) {
+    return null;
+  }
+  return (
+    <div style={{ display: 'flex', gap: '16px' }}>
+      <label style={{ display: 'flex', gap: '6px', cursor: 'pointer' }}>
+        <input
+          type="radio"
+          name="inspectTargetSelect"
+          checked={inspectTarget === 'plainText'}
+          onChange={() => setInspectTarget('plainText')}
+        />
+        plainText
+      </label>
+      <label style={{ display: 'flex', gap: '6px', cursor: 'pointer' }}>
+        <input
+          type="radio"
+          name="inspectTargetSelect"
+          checked={inspectTarget === 'htmlText'}
+          onChange={() => setInspectTarget('htmlText')}
+        />
+        htmlText
+      </label>
+    </div>
+  );
+};
+
+// eslint-disable-next-line max-lines-per-function
+const DebugClipboardSection = ({
+  payload,
+  inspectTarget,
+  setInspectTarget,
+  copyPlainText
+}: DebugSectionProps) => {
+  return (
+    <div
+      style={{
+        marginTop: '40px',
+        borderTop: '2px solid #eee',
+        paddingTop: '20px'
+      }}
+    >
+      <h2 style={{ marginBottom: '8px' }}>Debug Clipboard Payload</h2>
+      <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '16px' }}>
+        Inspect raw clipboard payload (both unescaped and escaped) and view a
+        character-by-character analysis.
+      </p>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '24px',
+          marginBottom: '32px',
+          alignItems: 'stretch'
+        }}
+      >
+        <OutputColumn
+          title="Raw plainText (unescaped)"
+          content={payload.plainText}
+          onCopy={() => copyPlainText(payload.plainText)}
+        />
+        <OutputColumn
+          title="Raw plainText (escaped)"
+          content={escapeInvisibleChars(payload.plainText)}
+          onCopy={() => copyPlainText(payload.plainText)}
+        />
+        {renderHtmlColumns(payload.htmlText, copyPlainText)}
+      </div>
+
+      <div
+        style={{
+          backgroundColor: '#fff',
+          border: '1px solid #ddd',
+          borderRadius: '8px',
+          padding: '20px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '12px',
+            marginBottom: '16px'
+          }}
+        >
+          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>
+            Character-by-Character Inspector
+          </h3>
+          {renderInspectSelector(
+            payload.htmlText,
+            inspectTarget,
+            setInspectTarget
+          )}
+        </div>
+
+        <div
+          style={{
+            maxHeight: '350px',
+            overflowY: 'auto',
+            border: '1px solid #eee',
+            borderRadius: '4px',
+            backgroundColor: '#fafafa'
+          }}
+        >
+          <table
+            style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              fontSize: '0.9rem',
+              textAlign: 'left'
+            }}
+          >
+            <thead>
+              <tr
+                style={{
+                  backgroundColor: '#eee',
+                  borderBottom: '2px solid #ddd'
+                }}
+              >
+                <th style={{ padding: '8px 12px' }}>Index</th>
+                <th style={{ padding: '8px 12px' }}>Glyph / Code Point</th>
+                <th style={{ padding: '8px 12px' }}>Unicode Hex</th>
+                <th style={{ padding: '8px 12px' }}>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {analyzeCharacters(
+                inspectTarget === 'htmlText'
+                  ? payload.htmlText || ''
+                  : payload.plainText
+              ).map((c) => (
+                <tr
+                  key={c.index}
+                  style={{
+                    borderBottom: '1px solid #eee',
+                    fontFamily: 'monospace',
+                    backgroundColor: c.char.startsWith('[')
+                      ? '#fff5f5'
+                      : 'transparent'
+                  }}
+                >
+                  <td style={{ padding: '6px 12px', color: '#888' }}>
+                    {c.index}
+                  </td>
+                  <td
+                    style={{
+                      padding: '6px 12px',
+                      fontWeight: 'bold',
+                      color: c.char.startsWith('[') ? '#d9534f' : '#222'
+                    }}
+                  >
+                    {c.char}
+                  </td>
+                  <td style={{ padding: '6px 12px', color: '#31708f' }}>
+                    {c.codePoint}
+                  </td>
+                  <td style={{ padding: '6px 12px', color: '#555' }}>
+                    {c.name}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // eslint-disable-next-line max-lines-per-function
 const App = () => {
   const [formatOverride, setFormatOverride] = useState<InputFormat>('auto');
+  const [inspectTarget, setInspectTarget] = useState<'plainText' | 'htmlText'>(
+    'plainText'
+  );
   const [payload, setPayload] = useState<ClipboardDataPayload>({
     plainText: ''
   });
@@ -45,8 +380,6 @@ const App = () => {
 
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
-      // Don't intercept if they are pasting directly in the textarea,
-      // as it has its own handler
       if (e.target instanceof HTMLTextAreaElement) return;
 
       if (e.clipboardData) {
@@ -92,7 +425,6 @@ const App = () => {
   const copyPlainText = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      // Optional: a visual toast could be better, but alert is simple
     } catch (err) {
       console.error('Failed to copy text: ', err);
     }
@@ -171,76 +503,21 @@ const App = () => {
         />
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '24px',
-          alignItems: 'stretch'
-        }}
-      >
-        <OutputColumn
-          title="Raw Format"
-          content={payload.plainText}
-          onCopy={() => copyPlainText(payload.plainText)}
-        />
-        <OutputColumn
-          title="Rendered HTML"
-          content={outputs.html}
-          onCopy={() => copyRichText(outputs.html)}
-          isHtmlRender
-        />
-        <OutputColumn
-          title="HTML Source"
-          content={outputs.html}
-          onCopy={() => copyPlainText(outputs.html)}
-        />
-        <OutputColumn
-          title="Markdown"
-          content={outputs.markdown}
-          onCopy={() => copyPlainText(outputs.markdown)}
-        />
-        <OutputColumn
-          title="Plaintext"
-          content={outputs.plaintext}
-          onCopy={() => copyPlainText(outputs.plaintext)}
-        />
-      </div>
+      <OutputGrid
+        plainText={payload.plainText}
+        html={outputs.html}
+        markdown={outputs.markdown}
+        plaintext={outputs.plaintext}
+        copyPlainText={copyPlainText}
+        copyRichText={copyRichText}
+      />
 
-      <div
-        style={{
-          marginTop: '40px',
-          borderTop: '2px solid #eee',
-          paddingTop: '20px'
-        }}
-      >
-        <h2 style={{ marginBottom: '8px' }}>Debug Clipboard Payload</h2>
-        <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '16px' }}>
-          Shows raw un-normalized clipboard text with invisible formatting
-          characters escaped (e.g. [ZWSP], [ZWNJ], [ZWJ]).
-        </p>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '24px',
-            alignItems: 'stretch'
-          }}
-        >
-          <OutputColumn
-            title="Raw plainText (escaped)"
-            content={escapeInvisibleChars(payload.plainText)}
-            onCopy={() => copyPlainText(payload.plainText)}
-          />
-          {payload.htmlText !== undefined && (
-            <OutputColumn
-              title="Raw htmlText (escaped)"
-              content={escapeInvisibleChars(payload.htmlText)}
-              onCopy={() => copyPlainText(payload.htmlText)}
-            />
-          )}
-        </div>
-      </div>
+      <DebugClipboardSection
+        payload={payload}
+        inspectTarget={inspectTarget}
+        setInspectTarget={setInspectTarget}
+        copyPlainText={copyPlainText}
+      />
     </div>
   );
 };
