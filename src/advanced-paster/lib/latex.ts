@@ -421,7 +421,10 @@ const convertSuperscriptsAndSubscripts = (text: string): string => {
  * Strips out structural macros but preserves their content where possible.
  */
 export const latexToText = (latex: string): string => {
-  const normalized = latex
+  const cleanLatex = latex
+    .replace(/\u00a0/g, ' ')
+    .replace(/[\u200b-\u200f\ufeff\u2060\u00ad\u202a-\u202e]/g, '');
+  const normalized = cleanLatex
     .replace(
       /\\(mathbb|mathcal|mathbf|mathrm|mathit|text|textbf|textit|frac|tfrac|dfrac|cfrac|boldsymbol|bold|mathsf|operatorname|widehat|vec|underbrace)\s+({)/g,
       '\\$1$2'
@@ -475,14 +478,20 @@ const MAX_SHORT_LATEX_LENGTH = 4;
  */
 export const latexToMathML = (latex: string, displayMode = false): string => {
   try {
-    return temml.renderToString(latex, {
+    const cleanLatex = latex
+      .replace(/\u00a0/g, ' ')
+      .replace(/[\u200b-\u200f\ufeff\u2060\u00ad\u202a-\u202e]/g, '');
+    return temml.renderToString(cleanLatex, {
       displayMode,
       annotate: true,
       throwOnError: false
     });
   } catch (e) {
     console.error('Temml error:', e);
-    const escaped = latex
+    const cleanLatex = latex
+      .replace(/\u00a0/g, ' ')
+      .replace(/[\u200b-\u200f\ufeff\u2060\u00ad\u202a-\u202e]/g, '');
+    const escaped = cleanLatex
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');

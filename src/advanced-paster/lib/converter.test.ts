@@ -451,4 +451,16 @@ Even more concisely, a vector space is a module over a field.[7]`;
     const result = convert(payload, 'html');
     expect(result.html).toBe('<div>Hello <b>World</b></div>');
   });
+
+  it('strips zero-width and formatting characters from LaTeX math commands in convertEmbeddedLatexToMathML', () => {
+    // Inject zero-width spaces (\u200b and \u200c) inside LaTeX tokens
+    const input =
+      '$\\m\u200b\u200cathbf{\\S\u200bigma} = \\sigma^2 \\m\u200b\u200cathbf{I}$';
+    const result = convert({ plainText: input }, 'latex');
+    // Ensure it renders clean MathML for bold Sigma (𝚺) and bold I (𝐈), without broken red \m error blocks
+    expect(result.html).toContain('<mi>𝚺</mi>');
+    expect(result.html).toContain('<mi>𝐈</mi>');
+    expect(result.html).not.toContain('color="#b22222"');
+    expect(result.html).not.toContain('\\m</mtext>');
+  });
 });
