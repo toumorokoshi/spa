@@ -35,13 +35,13 @@ Depending on the resolved format, the input is processed through one of three pi
 
 Used when the input is HTML. It processes the payload (`payload.htmlText` or fallback `payload.plainText`) as follows:
 
-1. **Normalization**: Replaces non-breaking space characters (`\u00a0`) with standard spaces and strips zero-width spaces (`\u200b`).
+1. **Normalization**: Replaces non-breaking space characters (`\u00a0`) with standard spaces and strips all zero-width, invisible formatting, and directional characters (e.g., ZWSP, ZWNJ, ZWJ, LRM, RLM, BOM, WJ, SHY).
 2. **Pre-processing**: If the input does not contain HTML tags (checked via `isHtml`), it passes the text through `processDisplayStyleToMathML` and `processDisplayStyleToUnicode` to handle any raw block-style LaTeX before parsing.
 3. **Generating HTML Output**:
    - Invokes [cleanHtmlMathToMathML](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/converter.ts#L473), which finds MathML elements (in containers with classes like `katex` or `mwe-math-element`, or raw `<math>` tags), extracts raw LaTeX from their `<annotation>` tags, alttext, or image alt attributes, and re-renders them cleanly with Temml.
    - Invokes [convertEmbeddedLatexToMathML](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/latex.ts#L552) to convert any remaining inline LaTeX syntax (e.g. `$ ... $`) inside the HTML body to MathML blocks.
    - Extracts all `<math>` blocks temporarily and replaces them with placeholders.
-   - Sanitizes the rest of the HTML structure: removes `<style>` blocks, `<meta>` tags, font tags (`<font>`), and presentation attributes (`style`, `class`, `id`, `color`, `bgcolor`, `align`, `valign`, `width`, `height`).
+   - Sanitizes the rest of the HTML structure: removes `<style>` blocks, `<meta>` tags, font tags (`<font>`), span tags (`<span>`), and presentation attributes (`style`, `class`, `id`, `color`, `bgcolor`, `align`, `valign`, `width`, `height`).
    - Restores the `<math>` blocks from placeholders.
 4. **Generating Plaintext Output**:
    - Invokes [cleanHtmlMathToUnicode](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/converter.ts#L449), which behaves similarly to the MathML cleaner but translates the extracted LaTeX to Unicode characters.
