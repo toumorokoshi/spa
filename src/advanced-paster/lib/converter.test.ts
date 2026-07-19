@@ -1,7 +1,19 @@
 /* eslint-disable max-lines-per-function */
 import { describe, it, expect } from 'vitest';
 import { convert } from './converter';
-import { latexToText, latexToMathML } from './latex';
+import { latexToText, latexToMathML, stripMathbfWrappers } from './latex';
+
+describe('stripMathbfWrappers', () => {
+  it('unwraps braced and spaced mathbf wrappers', () => {
+    expect(stripMathbfWrappers('\\mathbf{v}')).toBe('v');
+    expect(stripMathbfWrappers('\\mathbf {w}')).toBe('w');
+    expect(stripMathbfWrappers('\\mathbf{\\mathbf{x}}')).toBe('x');
+  });
+
+  it('leaves surrounding latex intact', () => {
+    expect(stripMathbfWrappers('\\mathbf {v} - \\mathbf {w}')).toBe('v - w');
+  });
+});
 
 describe('latexToText', () => {
   it('converts common symbols', () => {
@@ -12,6 +24,9 @@ describe('latexToText', () => {
   it('strips formatting macros', () => {
     expect(latexToText('\\textbf{hello}')).toBe('hello');
     expect(latexToText('\\textit{world}')).toBe('world');
+    expect(latexToText('\\mathbf{v}')).toBe('v');
+    expect(latexToText('\\mathbf {w}')).toBe('w');
+    expect(latexToText('\\mathbf{\\mathbf{x}}')).toBe('x');
   });
 
   it('converts fractions', () => {
@@ -70,9 +85,18 @@ describe('latexToMathML', () => {
 
   it('strips zero-width and formatting characters from commands and text', () => {
     const result = latexToMathML('\\m\u200b\u200cathbf{\\S\u200bigma}');
-    expect(result).toContain('<mi>𝚺</mi>');
+    expect(result).toContain('Σ');
+    expect(result).not.toContain('𝚺');
     expect(result).not.toContain('color="#b22222"');
     expect(result).not.toContain('\\m</mtext>');
+  });
+
+  it('strips mathbf wrappers before rendering MathML', () => {
+    expect(latexToMathML('\\mathbf{v}')).toContain('<mi>v</mi>');
+    expect(latexToMathML('\\mathbf {w}')).toContain('<mi>w</mi>');
+    expect(latexToMathML('\\mathbf{\\mathbf{x}}')).toContain('<mi>x</mi>');
+    expect(latexToMathML('\\mathbf{v}')).not.toContain('\\mathbf');
+    expect(latexToMathML('\\mathbf{v}')).not.toContain('mathvariant="bold"');
   });
 });
 
@@ -166,8 +190,10 @@ describe('converter', () => {
     const result = convert(payload, 'auto');
     expect(result.plaintext).toBe('Σ = σ² I');
     expect(result.markdown).toBe('Σ = σ² I');
-    expect(result.html).toContain('𝚺');
-    expect(result.html).toContain('𝐈');
+    expect(result.html).toContain('Σ');
+    expect(result.html).toContain('<mi>I</mi>');
+    expect(result.html).not.toContain('𝚺');
+    expect(result.html).not.toContain('𝐈');
   });
 
   it('protects currency from incorrect LaTeX conversion in Markdown', () => {
@@ -468,9 +494,11 @@ Even more concisely, a vector space is a module over a field.[7]`;
     const input =
       '$\\m\u200b\u200cathbf{\\S\u200bigma} = \\sigma^2 \\m\u200b\u200cathbf{I}$';
     const result = convert({ plainText: input }, 'latex');
-    // Ensure it renders clean MathML for bold Sigma (𝚺) and bold I (𝐈), without broken red \m error blocks
-    expect(result.html).toContain('<mi>𝚺</mi>');
-    expect(result.html).toContain('<mi>𝐈</mi>');
+    // mathbf is stripped in preprocessing; expect upright Sigma / I without broken red \m error blocks
+    expect(result.html).toContain('Σ');
+    expect(result.html).toContain('<mi>I</mi>');
+    expect(result.html).not.toContain('𝚺');
+    expect(result.html).not.toContain('𝐈');
     expect(result.html).not.toContain('color="#b22222"');
     expect(result.html).not.toContain('\\m</mtext>');
   });

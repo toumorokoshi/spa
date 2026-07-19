@@ -90,13 +90,20 @@ Used when the input is Markdown. It processes `payload.plainText`:
 
 The core mathematical conversion logic resides in [latex.ts](../lib/latex.ts):
 
+### Shared LaTeX preprocessing
+
+Before Unicode or MathML conversion, LaTeX segments are preprocessed:
+
+1. `normalizeInput` replaces non-breaking spaces and strips zero-width / invisible formatting characters.
+2. `stripMathbfWrappers` unwraps `\mathbf{...}` and `\mathbf {...}` (brace-aware, recursive). Bold math from sources like Wikipedia is not useful in outputs; the inner content is kept.
+
 ### `latexToText`
 
 Performs a best-effort, pure functional translation of a LaTeX string to plain Unicode text:
 
-1. Normalizes whitespace and macro structures (such as changing `\mathbf {x}` to `\mathbf{x}`).
+1. Runs shared LaTeX preprocessing (`normalizeInput`, then `stripMathbfWrappers`), then normalizes remaining macro spacing (such as changing `\mathrm {x}` to `\mathrm{x}`).
 2. Replaces LaTeX symbols defined in the `LATEX_TO_UNICODE` map using dynamically generated regexes like `\\symbol(?![a-zA-Z])`.
-3. Strips formatting macros (e.g. `\mathbf`, `\textbf`, `\textit`, `\mathrm`, `\mathsf`) using regex, extracting only their inner text contents.
+3. Strips remaining formatting macros (e.g. `\textbf`, `\textit`, `\mathrm`, `\mathsf`) using regex, extracting only their inner text contents.
 4. Converts complex mathematical structures:
    - `\frac{a}{b}` -> `(a)/(b)`
    - `\vec{x}` -> `x`
@@ -107,10 +114,10 @@ Performs a best-effort, pure functional translation of a LaTeX string to plain U
 
 ### `latexToMathML`
 
-Translates a LaTeX segment to MathML using `temml.renderToString` with the options:
+Translates a LaTeX segment to MathML using `temml.renderToString` after shared LaTeX preprocessing (`normalizeInput`, then `stripMathbfWrappers`), with the options:
 
 - `displayMode`: Toggles block vs inline math.
-- `annotate: true`: Generates the `<annotation encoding="application/x-tex">` block containing the original LaTeX string.
+- `annotate: true`: Generates the `<annotation encoding="application/x-tex">` block containing the preprocessed LaTeX string.
 - `throwOnError: false`: Catches syntax errors gracefully, coloring invalid commands red (`#b22222`) inside `<mtext>` blocks instead of crashing.
 
 ### `convertEmbeddedLatexToUnicode` and `convertEmbeddedLatexToMathML`

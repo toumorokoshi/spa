@@ -18,7 +18,7 @@ The main Preact component (`App`) handles all side-effects:
 The `lib/` directory contains pure, side-effect-free transformation logic:
 
 - `converter.ts`: Orchestrates the conversions. Given an input format and string, it returns a data structure containing all three converted formats (`html`, `markdown`, `plaintext`).
-- `latex.ts`: Provides conversion from LaTeX math expressions to MathML using Temml (for high-fidelity HTML output) and best-effort Unicode translation (for Markdown and Plaintext).
+- `latex.ts`: Provides conversion from LaTeX math expressions to MathML using Temml (for high-fidelity HTML output) and best-effort Unicode translation (for Markdown and Plaintext). Shared preprocessing strips invisible characters and unwraps `\mathbf{...}` wrappers before either path runs.
 
 ### Third-Party Libraries
 

@@ -5,6 +5,48 @@ export const normalizeInput = (text: string): string =>
     .replace(/\u00a0/g, ' ')
     .replace(/[\u200b-\u200f\ufeff\u2060\u00ad\u202a-\u202e]/g, '');
 
+const findMatchingBrace = (
+  text: string,
+  index: number,
+  braceCount: number
+): number => {
+  if (index >= text.length || braceCount === 0) {
+    return index;
+  }
+  const nextChar = text[index];
+  const nextCount =
+    nextChar === '{'
+      ? braceCount + 1
+      : nextChar === '}'
+        ? braceCount - 1
+        : braceCount;
+  return findMatchingBrace(text, index + 1, nextCount);
+};
+
+/**
+ * Unwraps `\mathbf{...}` / `\mathbf {...}` wrappers (brace-aware, recursive).
+ * Bold math styling from sources like Wikipedia is not useful in outputs.
+ */
+export const stripMathbfWrappers = (text: string): string => {
+  const pattern = /\\mathbf\s*\{/;
+  const match = pattern.exec(text);
+  if (!match) {
+    return text;
+  }
+  const startIdx = match.index;
+  const openBraceIdx = startIdx + match[0].length - 1;
+  const closeIdx = findMatchingBrace(text, openBraceIdx + 1, 1);
+  if (closeIdx <= text.length && text[closeIdx - 1] === '}') {
+    const before = text.slice(0, startIdx);
+    const inner = text.slice(openBraceIdx + 1, closeIdx - 1);
+    const after = text.slice(closeIdx);
+    return stripMathbfWrappers(before + inner + after);
+  }
+  const before = text.slice(0, openBraceIdx + 1);
+  const after = text.slice(openBraceIdx + 1);
+  return before + stripMathbfWrappers(after);
+};
+
 // A best-effort mapping of LaTeX symbols to their closest Unicode equivalent.
 export const LATEX_TO_UNICODE: Record<string, string> = {
   '\\aleph': 'ℵ',
@@ -426,7 +468,7 @@ const convertSuperscriptsAndSubscripts = (text: string): string => {
  * Strips out structural macros but preserves their content where possible.
  */
 export const latexToText = (latex: string): string => {
-  const normalized = normalizeInput(latex)
+  const normalized = stripMathbfWrappers(normalizeInput(latex))
     .replace(
       /\\(mathbb|mathcal|mathbf|mathrm|mathit|text|textbf|textit|frac|tfrac|dfrac|cfrac|boldsymbol|bold|mathsf|operatorname|widehat|vec|underbrace)\s+({)/g,
       '\\$1$2'
@@ -480,7 +522,7 @@ const MAX_SHORT_LATEX_LENGTH = 4;
  */
 export const latexToMathML = (latex: string, displayMode = false): string => {
   try {
-    const cleanLatex = normalizeInput(latex);
+    const cleanLatex = stripMathbfWrappers(normalizeInput(latex));
     return temml.renderToString(cleanLatex, {
       displayMode,
       annotate: true,
@@ -488,7 +530,7 @@ export const latexToMathML = (latex: string, displayMode = false): string => {
     });
   } catch (e) {
     console.error('Temml error:', e);
-    const cleanLatex = normalizeInput(latex);
+    const cleanLatex = stripMathbfWrappers(normalizeInput(latex));
     const escaped = cleanLatex
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
