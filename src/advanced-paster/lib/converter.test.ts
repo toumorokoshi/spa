@@ -49,6 +49,10 @@ describe('latexToText', () => {
     expect(latexToText('a \\over b')).toBe('a ÷ b');
     expect(latexToText('\\div')).toBe('÷');
   });
+
+  it('strips zero-width and formatting characters from commands and text', () => {
+    expect(latexToText('\\m\u200b\u200cathbf{\\S\u200bigma}')).toBe('Σ');
+  });
 });
 
 describe('latexToMathML', () => {
@@ -62,6 +66,13 @@ describe('latexToMathML', () => {
 
   it('supports displayMode option', () => {
     expect(latexToMathML('\\beta', true)).toContain('display="block"');
+  });
+
+  it('strips zero-width and formatting characters from commands and text', () => {
+    const result = latexToMathML('\\m\u200b\u200cathbf{\\S\u200bigma}');
+    expect(result).toContain('<mi>𝚺</mi>');
+    expect(result).not.toContain('color="#b22222"');
+    expect(result).not.toContain('\\m</mtext>');
   });
 });
 
