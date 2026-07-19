@@ -441,4 +441,14 @@ Even more concisely, a vector space is a module over a field.[7]`;
       'style="padding-left:0em;padding-right:5.9776pt;"'
     );
   });
+
+  it('strips span tags from HTML paste while keeping other semantic elements', () => {
+    const payload = {
+      plainText: '',
+      htmlText:
+        '<div><span class="outer"><span class="inner">Hello <b>World</b></span></span></div>'
+    };
+    const result = convert(payload, 'html');
+    expect(result.html).toBe('<div>Hello <b>World</b></div>');
+  });
 });

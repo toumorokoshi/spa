@@ -538,6 +538,7 @@ const convertHtml = (html: string): ConvertedOutputs => {
     .replace(/<style[^>]*>.*?<\/style>/gis, '')
     .replace(/<meta[^>]*>/gis, '')
     .replace(/<\/?font[^>]*>/gis, '')
+    .replace(/<\/?span[^>]*>/gis, '')
     .replace(
       /\s+(style|class|id|color|bgcolor|align|valign|width|height)=("[^"]*"|'[^']*'|[^\s>]+)/gi,
       ''
