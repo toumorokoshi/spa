@@ -9,6 +9,20 @@ import {
   ConvertedOutputs
 } from './lib/converter';
 
+const escapeInvisibleChars = (str: string | undefined): string => {
+  if (!str) return '';
+  return str
+    .replace(/\u200b/g, '[ZWSP]')
+    .replace(/\u200c/g, '[ZWNJ]')
+    .replace(/\u200d/g, '[ZWJ]')
+    .replace(/\u200e/g, '[LRM]')
+    .replace(/\u200f/g, '[RLM]')
+    .replace(/\ufeff/g, '[BOM]')
+    .replace(/\u2060/g, '[WJ]')
+    .replace(/\u00ad/g, '[SHY]')
+    .replace(/\u00a0/g, '[NBSP]');
+};
+
 // eslint-disable-next-line max-lines-per-function
 const App = () => {
   const [formatOverride, setFormatOverride] = useState<InputFormat>('auto');
@@ -191,6 +205,41 @@ const App = () => {
           content={outputs.plaintext}
           onCopy={() => copyPlainText(outputs.plaintext)}
         />
+      </div>
+
+      <div
+        style={{
+          marginTop: '40px',
+          borderTop: '2px solid #eee',
+          paddingTop: '20px'
+        }}
+      >
+        <h2 style={{ marginBottom: '8px' }}>Debug Clipboard Payload</h2>
+        <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '16px' }}>
+          Shows raw un-normalized clipboard text with invisible formatting
+          characters escaped (e.g. [ZWSP], [ZWNJ], [ZWJ]).
+        </p>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '24px',
+            alignItems: 'stretch'
+          }}
+        >
+          <OutputColumn
+            title="Raw plainText (escaped)"
+            content={escapeInvisibleChars(payload.plainText)}
+            onCopy={() => copyPlainText(payload.plainText)}
+          />
+          {payload.htmlText !== undefined && (
+            <OutputColumn
+              title="Raw htmlText (escaped)"
+              content={escapeInvisibleChars(payload.htmlText)}
+              onCopy={() => copyPlainText(payload.htmlText)}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

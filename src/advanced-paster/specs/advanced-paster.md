@@ -143,3 +143,21 @@ Websites (like Wikipedia) frequently output a plaintext representation of a form
    - Strips backslashes and non-alphanumeric characters and converts to lowercase.
 3. If the common prefix length between the normalized fallback candidate and the expected converted string is greater than a ratio of the fallback length (`DEDUPLICATE_PREFIX_RATIO = 0.5`), and their lengths do not differ by more than a factor of `2.0`, the candidate is marked as a duplicate.
 4. The duplicate plaintext fallback is sliced out from the preceding text before rendering the newly converted block.
+
+---
+
+## 6. Debug Clipboard Payload
+
+To help debug issues where invisible Unicode characters (like `\u200b`, `\u200c`, `\u200d`) affect parsing, the application UI includes a **Debug Clipboard Payload** section:
+
+- It uses the helper function `escapeInvisibleChars` to replace raw non-printing characters in the clipboard payload with visible text labels:
+  - `\u200b` -> `[ZWSP]` (Zero-Width Space)
+  - `\u200c` -> `[ZWNJ]` (Zero-Width Non-Joiner)
+  - `\u200d` -> `[ZWJ]` (Zero-Width Joiner)
+  - `\u200e` -> `[LRM]` (Left-to-Right Mark)
+  - `\u200f` -> `[RLM]` (Right-to-Left Mark)
+  - `\ufeff` -> `[BOM]` (Byte Order Mark)
+  - `\u2060` -> `[WJ]` (Word Joiner)
+  - `\u00ad` -> `[SHY]` (Soft Hyphen)
+  - `\u00a0` -> `[NBSP]` (Non-Breaking Space)
+- Shows raw un-normalized values for both `payload.plainText` and `payload.htmlText` (if present) so that users can verify the exact structure of what was captured on paste.
