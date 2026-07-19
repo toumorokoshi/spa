@@ -6,17 +6,17 @@ This specification documents the step-by-step pipeline `advanced-paster` uses to
 
 ## 1. Entry Point and State Orchestration
 
-The application UI and side-effects are managed in [index.tsx](file:///home/yusuke/workspace/spa/src/advanced-paster/index.tsx):
+The application UI and side-effects are managed in [index.tsx](../index.tsx):
 
 - Global paste listener (`window.addEventListener('paste', ...)`) intercepts paste events (unless focused inside the manual input textarea, which has its own paste handler).
 - It extracts `text/plain` and `text/html` from the clipboard event and stores them in the `payload` state as a `ClipboardDataPayload`.
-- The `App` component runs a React effect that calls the core [convert](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/converter.ts#L589) function whenever the payload or format override dropdown state changes.
+- The `App` component runs a React effect that calls the core [convert](../lib/converter.ts#L589) function whenever the payload or format override dropdown state changes.
 
 ---
 
 ## 2. Format Detection (`detectFormat`)
 
-When the user selects the **Auto-detect** input format, [detectFormat](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/converter.ts#L67) resolves the input format:
+When the user selects the **Auto-detect** input format, [detectFormat](../lib/converter.ts#L67) resolves the input format:
 
 1. **HTML Format**: If `payload.htmlText` is present (not empty or undefined), it immediately resolves to `'html'`.
 2. **LaTeX Format**: If no HTML is present, it scans `payload.plainText` for math indicators:
@@ -29,7 +29,7 @@ When the user selects the **Auto-detect** input format, [detectFormat](file:///h
 
 ## 3. Conversion Pipelines
 
-Depending on the resolved format, the input is processed through one of three pipeline functions in [converter.ts](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/converter.ts):
+Depending on the resolved format, the input is processed through one of three pipeline functions in [converter.ts](../lib/converter.ts):
 
 ### A. HTML Pipeline (`convertHtml`)
 
@@ -38,14 +38,14 @@ Used when the input is HTML. It processes the payload (`payload.htmlText` or fal
 1. **Normalization**: Replaces non-breaking space characters (`\u00a0`) with standard spaces and strips all zero-width, invisible formatting, and directional characters (e.g., ZWSP, ZWNJ, ZWJ, LRM, RLM, BOM, WJ, SHY).
 2. **Pre-processing**: If the input does not contain HTML tags (checked via `isHtml`), it passes the text through `processDisplayStyleToMathML` and `processDisplayStyleToUnicode` to handle any raw block-style LaTeX before parsing.
 3. **Generating HTML Output**:
-   - Invokes [cleanHtmlMathToMathML](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/converter.ts#L473), which finds MathML elements (in containers with classes like `katex` or `mwe-math-element`, or raw `<math>` tags), extracts raw LaTeX from their `<annotation>` tags, alttext, or image alt attributes, and re-renders them cleanly with Temml.
-   - Invokes [convertEmbeddedLatexToMathML](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/latex.ts#L552) to convert any remaining inline LaTeX syntax (e.g. `$ ... $`) inside the HTML body to MathML blocks.
+   - Invokes [cleanHtmlMathToMathML](../lib/converter.ts#L473), which finds MathML elements (in containers with classes like `katex` or `mwe-math-element`, or raw `<math>` tags), extracts raw LaTeX from their `<annotation>` tags, alttext, or image alt attributes, and re-renders them cleanly with Temml.
+   - Invokes [convertEmbeddedLatexToMathML](../lib/latex.ts#L552) to convert any remaining inline LaTeX syntax (e.g. `$ ... $`) inside the HTML body to MathML blocks.
    - Extracts all `<math>` blocks temporarily and replaces them with placeholders.
    - Sanitizes the rest of the HTML structure: removes `<style>` blocks, `<meta>` tags, font tags (`<font>`), span tags (`<span>`), and presentation attributes (`style`, `class`, `id`, `color`, `bgcolor`, `align`, `valign`, `width`, `height`).
    - Restores the `<math>` blocks from placeholders.
 4. **Generating Plaintext Output**:
-   - Invokes [cleanHtmlMathToUnicode](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/converter.ts#L449), which behaves similarly to the MathML cleaner but translates the extracted LaTeX to Unicode characters.
-   - Invokes [convertEmbeddedLatexToUnicode](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/latex.ts#L498) to resolve remaining inline LaTeX equations to Unicode.
+   - Invokes [cleanHtmlMathToUnicode](../lib/converter.ts#L449), which behaves similarly to the MathML cleaner but translates the extracted LaTeX to Unicode characters.
+   - Invokes [convertEmbeddedLatexToUnicode](../lib/latex.ts#L498) to resolve remaining inline LaTeX equations to Unicode.
    - Strips all HTML tags from the final string using a global regex `/<[^>]*>?/gm` and trims whitespace.
 5. **Generating Markdown Output**:
    - Converts the cleaned Unicode HTML string (obtained before stripping tags for plaintext) into Markdown format using `turndownService.turndown`.
@@ -59,12 +59,12 @@ Used when the input is LaTeX. It processes `payload.plainText`:
 1. **Normalization**: Replaces non-breaking spaces with standard spaces and strips zero-width spaces (`\u200b`).
 2. **Generating Plaintext and Markdown Outputs**:
    - Resolves display-style math blocks to Unicode using `processDisplayStyleToUnicode`.
-   - Converts the entire LaTeX content into Unicode text using [latexToText](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/latex.ts#L423).
+   - Converts the entire LaTeX content into Unicode text using [latexToText](../lib/latex.ts#L423).
    - Markdown and Plaintext outputs both share this converted Unicode string.
 3. **Generating HTML Output**:
    - Resolves display-style math blocks to MathML using `processDisplayStyleToMathML`.
-   - If the text has LaTeX math delimiters or existing `<math>` tags, it processes inline formulas using [convertEmbeddedLatexToMathML](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/latex.ts#L552).
-   - Otherwise, it converts the entire text block to MathML using [latexToMathML](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/latex.ts#L476).
+   - If the text has LaTeX math delimiters or existing `<math>` tags, it processes inline formulas using [convertEmbeddedLatexToMathML](../lib/latex.ts#L552).
+   - Otherwise, it converts the entire text block to MathML using [latexToMathML](../lib/latex.ts#L476).
    - Wraps the final MathML output inside a `<p>` tag.
 
 ---
@@ -76,19 +76,19 @@ Used when the input is Markdown. It processes `payload.plainText`:
 1. **Normalization**: Replaces non-breaking spaces with standard spaces and strips zero-width spaces (`\u200b`).
 2. **Generating Markdown and Plaintext Outputs**:
    - Resolves display-style math blocks to Unicode (`processDisplayStyleToUnicode`).
-   - Converts any embedded inline math blocks to Unicode using [convertEmbeddedLatexToUnicode](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/latex.ts#L498).
+   - Converts any embedded inline math blocks to Unicode using [convertEmbeddedLatexToUnicode](../lib/latex.ts#L498).
    - The resulting string is the final Markdown.
    - Plaintext is generated by parsing this processed Markdown into HTML via `marked.parse` and then stripping the HTML tags.
 3. **Generating HTML Output**:
    - Resolves display-style math blocks to MathML (`processDisplayStyleToMathML`).
-   - Converts embedded inline math blocks to MathML using [convertEmbeddedLatexToMathML](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/latex.ts#L552).
+   - Converts embedded inline math blocks to MathML using [convertEmbeddedLatexToMathML](../lib/latex.ts#L552).
    - Parses the resulting Markdown (now containing embedded MathML tags) to HTML using `marked.parse`.
 
 ---
 
 ## 4. LaTeX Conversion Functions
 
-The core mathematical conversion logic resides in [latex.ts](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/latex.ts):
+The core mathematical conversion logic resides in [latex.ts](../lib/latex.ts):
 
 ### `latexToText`
 
@@ -134,7 +134,7 @@ For inline dollar-sign math blocks, strict heuristics are applied to distinguish
 
 ## 5. Duplicate Math Detection and Deduplication
 
-Websites (like Wikipedia) frequently output a plaintext representation of a formula right before its MathML structure (e.g., `U {\displaystyle U}`). To prevent duplicate text in outputs, [processBlockReplacement](file:///home/yusuke/workspace/spa/src/advanced-paster/lib/converter.ts#L229) cleans this up:
+Websites (like Wikipedia) frequently output a plaintext representation of a formula right before its MathML structure (e.g., `U {\displaystyle U}`). To prevent duplicate text in outputs, [processBlockReplacement](../lib/converter.ts#L229) cleans this up:
 
 1. When a display-style math block is processed, `findFallbackSuffix` scans the preceding text (`before`) for a suffix matching the converted math string.
 2. It compares the strings by normalising them (`normalizeForComparison`):
