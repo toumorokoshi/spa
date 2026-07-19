@@ -147,10 +147,10 @@ describe('converter', () => {
     );
   });
 
-  it('strips zero-width spaces during normalization to ensure correct LaTeX conversion', () => {
+  it('strips zero-width and invisible formatting characters during normalization to ensure correct LaTeX conversion', () => {
     const payload = {
       plainText:
-        '$\\m\u200bathbf{\\S\u200bigma} = \\s\u200bigma^2 \\m\u200bathbf{I}$'
+        '$\\m\u200cat\u200dhbf{\\S\u200cigma} = \\s\u200eigma^2 \\m\u200fat\u2060hbf{I}$'
     };
     const result = convert(payload, 'auto');
     expect(result.plaintext).toBe('Σ = σ² I');

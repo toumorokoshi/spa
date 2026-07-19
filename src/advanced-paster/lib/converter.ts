@@ -500,7 +500,9 @@ const cleanHtmlMathToMathML = (html: string): string => {
 };
 
 const normalizeInput = (text: string): string =>
-  text.replace(/\u00a0/g, ' ').replace(/\u200b/g, '');
+  text
+    .replace(/\u00a0/g, ' ')
+    .replace(/[\u200b-\u200f\ufeff\u2060\u00ad\u202a-\u202e]/g, '');
 
 const convertHtml = (html: string): ConvertedOutputs => {
   const normalized = normalizeInput(html);
