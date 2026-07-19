@@ -152,6 +152,7 @@ interface DebugSectionProps {
   inspectTarget: 'plainText' | 'htmlText';
   setInspectTarget: (t: 'plainText' | 'htmlText') => void;
   copyPlainText: (text: string) => void;
+  debugSteps?: Array<{ stepName: string; output: string }>;
 }
 
 const renderHtmlColumns = (
@@ -205,6 +206,87 @@ const renderInspectSelector = (
         />
         htmlText
       </label>
+    </div>
+  );
+};
+
+const renderPipelineStepItem = (
+  step: { stepName: string; output: string },
+  idx: number
+) => {
+  return (
+    <details
+      key={idx}
+      style={{
+        border: '1px solid #eee',
+        borderRadius: '4px',
+        backgroundColor: '#fafafa'
+      }}
+    >
+      <summary
+        style={{
+          padding: '10px 14px',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          userSelect: 'none',
+          outline: 'none'
+        }}
+      >
+        {step.stepName}
+      </summary>
+      <div
+        style={{
+          padding: '14px',
+          borderTop: '1px solid #eee',
+          backgroundColor: '#fff',
+          maxHeight: '250px',
+          overflowY: 'auto'
+        }}
+      >
+        <pre
+          style={{
+            margin: 0,
+            fontSize: '0.85rem',
+            fontFamily: 'monospace',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-all'
+          }}
+        >
+          {step.output}
+        </pre>
+      </div>
+    </details>
+  );
+};
+
+const renderPipelineSteps = (
+  debugSteps: Array<{ stepName: string; output: string }> | undefined
+) => {
+  if (!debugSteps || debugSteps.length === 0) {
+    return null;
+  }
+  return (
+    <div
+      style={{
+        marginTop: '32px',
+        backgroundColor: '#fff',
+        border: '1px solid #ddd',
+        borderRadius: '8px',
+        padding: '20px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+        marginBottom: '32px'
+      }}
+    >
+      <h3 style={{ margin: '0 0 8px 0', fontSize: '1.1rem' }}>
+        HTML Conversion Pipeline Steps
+      </h3>
+      <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '16px' }}>
+        View the raw intermediate output of each sequential step executed within
+        the HTML conversion pipeline.
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {debugSteps.map((step, idx) => renderPipelineStepItem(step, idx))}
+      </div>
     </div>
   );
 };
@@ -358,7 +440,7 @@ const DebugClipboardSection = ({
 };
 
 // eslint-disable-next-line max-lines-per-function
-const App = () => {
+export const App = () => {
   const [formatOverride, setFormatOverride] = useState<InputFormat>('auto');
   const [inspectTarget, setInspectTarget] = useState<'plainText' | 'htmlText'>(
     'plainText'
@@ -525,4 +607,7 @@ const App = () => {
   );
 };
 
-render(<App />, document.getElementById('app') as HTMLElement);
+const appElement = document.getElementById('app');
+if (appElement) {
+  render(<App />, appElement);
+}
