@@ -1,5 +1,10 @@
 import temml from 'temml';
 
+export const normalizeInput = (text: string): string =>
+  text
+    .replace(/\u00a0/g, ' ')
+    .replace(/[\u200b-\u200f\ufeff\u2060\u00ad\u202a-\u202e]/g, '');
+
 // A best-effort mapping of LaTeX symbols to their closest Unicode equivalent.
 export const LATEX_TO_UNICODE: Record<string, string> = {
   '\\aleph': 'ℵ',
@@ -421,10 +426,7 @@ const convertSuperscriptsAndSubscripts = (text: string): string => {
  * Strips out structural macros but preserves their content where possible.
  */
 export const latexToText = (latex: string): string => {
-  const cleanLatex = latex
-    .replace(/\u00a0/g, ' ')
-    .replace(/[\u200b-\u200f\ufeff\u2060\u00ad\u202a-\u202e]/g, '');
-  const normalized = cleanLatex
+  const normalized = normalizeInput(latex)
     .replace(
       /\\(mathbb|mathcal|mathbf|mathrm|mathit|text|textbf|textit|frac|tfrac|dfrac|cfrac|boldsymbol|bold|mathsf|operatorname|widehat|vec|underbrace)\s+({)/g,
       '\\$1$2'
@@ -478,9 +480,7 @@ const MAX_SHORT_LATEX_LENGTH = 4;
  */
 export const latexToMathML = (latex: string, displayMode = false): string => {
   try {
-    const cleanLatex = latex
-      .replace(/\u00a0/g, ' ')
-      .replace(/[\u200b-\u200f\ufeff\u2060\u00ad\u202a-\u202e]/g, '');
+    const cleanLatex = normalizeInput(latex);
     return temml.renderToString(cleanLatex, {
       displayMode,
       annotate: true,
@@ -488,9 +488,7 @@ export const latexToMathML = (latex: string, displayMode = false): string => {
     });
   } catch (e) {
     console.error('Temml error:', e);
-    const cleanLatex = latex
-      .replace(/\u00a0/g, ' ')
-      .replace(/[\u200b-\u200f\ufeff\u2060\u00ad\u202a-\u202e]/g, '');
+    const cleanLatex = normalizeInput(latex);
     const escaped = cleanLatex
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')

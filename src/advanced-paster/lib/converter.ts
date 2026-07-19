@@ -8,7 +8,8 @@ import {
   getLatexCommands,
   SUPERSCRIPTS,
   SUBSCRIPTS,
-  unicodeToLetterMap
+  unicodeToLetterMap,
+  normalizeInput
 } from './latex';
 
 export type InputFormat = 'auto' | 'html' | 'markdown' | 'latex';
@@ -499,11 +500,6 @@ const cleanHtmlMathToMathML = (html: string): string => {
   const result = replaceMathTags(processedKatex, replaceFn);
   return result.replace(/\s*data-processed="true"/g, '');
 };
-
-const normalizeInput = (text: string): string =>
-  text
-    .replace(/\u00a0/g, ' ')
-    .replace(/[\u200b-\u200f\ufeff\u2060\u00ad\u202a-\u202e]/g, '');
 
 // eslint-disable-next-line max-lines-per-function
 const convertHtml = (html: string): ConvertedOutputs => {
