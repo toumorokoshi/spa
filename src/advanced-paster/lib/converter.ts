@@ -22,6 +22,7 @@ export interface ConvertedOutputs {
   html: string;
   markdown: string;
   plaintext: string;
+  debugSteps?: Array<{ stepName: string; output: string }>;
 }
 
 import { gfm } from 'turndown-plugin-gfm';
@@ -504,23 +505,60 @@ const normalizeInput = (text: string): string =>
     .replace(/\u00a0/g, ' ')
     .replace(/[\u200b-\u200f\ufeff\u2060\u00ad\u202a-\u202e]/g, '');
 
+// eslint-disable-next-line max-lines-per-function
 const convertHtml = (html: string): ConvertedOutputs => {
+  const steps: Array<{ stepName: string; output: string }> = [];
+  steps.push({ stepName: '1. Input Payload HTML', output: html });
+
   const normalized = normalizeInput(html);
+  steps.push({
+    stepName: '2. Normalization (Invisible chars stripped)',
+    output: normalized
+  });
 
   const htmlWithMath = isHtml(normalized)
     ? normalized
     : processDisplayStyleToMathML(normalized);
+  steps.push({
+    stepName: '3. Pre-process Display Style MathML',
+    output: htmlWithMath
+  });
+
   const cleanedHtmlForHtml = cleanHtmlMathToMathML(htmlWithMath);
+  steps.push({
+    stepName: '4. Clean Html Math to MathML',
+    output: cleanedHtmlForHtml
+  });
+
   const processedHtmlForHtml = convertEmbeddedLatexToMathML(cleanedHtmlForHtml);
+  steps.push({
+    stepName: '5. Convert Embedded Latex to MathML',
+    output: processedHtmlForHtml
+  });
 
   const htmlWithMathText = isHtml(normalized)
     ? normalized
     : processDisplayStyleToUnicode(normalized);
+  steps.push({
+    stepName: '6. Pre-process Display Style Unicode',
+    output: htmlWithMathText
+  });
+
   const cleanedHtmlForText = cleanHtmlMathToUnicode(htmlWithMathText);
+  steps.push({
+    stepName: '7. Clean Html Math to Unicode',
+    output: cleanedHtmlForText
+  });
+
   const processedHtmlForText =
     convertEmbeddedLatexToUnicode(cleanedHtmlForText);
+  steps.push({
+    stepName: '8. Convert Embedded Latex to Unicode',
+    output: processedHtmlForText
+  });
 
   const markdown = turndownService.turndown(processedHtmlForText);
+  steps.push({ stepName: '9. Generate Markdown (Turndown)', output: markdown });
 
   // Remove <style>...</style> blocks, <meta> tags, <font> tags, and styling attributes
   // Extract math blocks first to preserve their attributes (class, style, etc.)
@@ -533,6 +571,10 @@ const convertHtml = (html: string): ConvertedOutputs => {
       return placeholder;
     }
   );
+  steps.push({
+    stepName: '10. Math Blocks Isolated',
+    output: withPlaceholders
+  });
 
   const cleanedRest = withPlaceholders
     .replace(/<style[^>]*>.*?<\/style>/gis, '')
@@ -543,13 +585,23 @@ const convertHtml = (html: string): ConvertedOutputs => {
       /\s+(style|class|id|color|bgcolor|align|valign|width|height)=("[^"]*"|'[^']*'|[^\s>]+)/gi,
       ''
     );
+  steps.push({
+    stepName: '11. Style/Font/Span/Attrs Sanitized',
+    output: cleanedRest
+  });
 
   const cleanHtml = mathBlocks.reduce((htmlText, block, index) => {
     return htmlText.replace(`__MATH_BLOCK_PLACEHOLDER_${index}__`, block);
   }, cleanedRest);
+  steps.push({
+    stepName: '12. Math Blocks Restored (Final HTML)',
+    output: cleanHtml
+  });
 
   const plaintext = processedHtmlForText.replace(/<[^>]*>?/gm, '').trim();
-  return { html: cleanHtml, markdown, plaintext };
+  steps.push({ stepName: '13. Generate Plaintext (Final)', output: plaintext });
+
+  return { html: cleanHtml, markdown, plaintext, debugSteps: steps };
 };
 
 const convertLatex = (plainText: string): ConvertedOutputs => {

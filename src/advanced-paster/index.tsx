@@ -214,7 +214,8 @@ const DebugClipboardSection = ({
   payload,
   inspectTarget,
   setInspectTarget,
-  copyPlainText
+  copyPlainText,
+  debugSteps
 }: DebugSectionProps) => {
   return (
     <div
@@ -351,6 +352,7 @@ const DebugClipboardSection = ({
           </table>
         </div>
       </div>
+      {renderPipelineSteps(debugSteps)}
     </div>
   );
 };
@@ -517,6 +519,7 @@ const App = () => {
         inspectTarget={inspectTarget}
         setInspectTarget={setInspectTarget}
         copyPlainText={copyPlainText}
+        debugSteps={outputs.debugSteps}
       />
     </div>
   );
