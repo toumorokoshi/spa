@@ -111,6 +111,15 @@ describe('latexToMathML', () => {
     expect(result.html).toContain('<mtext>original</mtext>');
     expect(result.plaintext).toContain('Loss');
   });
+
+  it('auto-detects HTML format when raw HTML with data-math is in plainText', () => {
+    const rawHtml =
+      '<div class="math-block" data-math="\\text{Loss}_{\\text{L1}} = \\text{Loss}_{\\text{original}} + \\lambda \\sum_{i=1}^{n} \\vert{}w_i\\vert{}">$$\\text{Loss}_{\\text{L1}} = \\text{Loss}_{\\text{original}} + \\lambda \\sum_{i=1}^{n} \\vert{}w_i\\vert{}$$</div>';
+    const result = convert({ plainText: rawHtml }, 'auto');
+    expect(result.html).toContain('<mtext>Loss</mtext>');
+    expect(result.html).not.toContain('data-math');
+    expect(result.plaintext).toContain('Loss');
+  });
 });
 
 describe('converter', () => {

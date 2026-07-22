@@ -512,7 +512,8 @@ export const latexToText = (latex: string): string => {
 
   return convertSuperscriptsAndSubscripts(converted)
     .replace(/\^′/g, '′')
-    .replace(/\^{′}/g, '′');
+    .replace(/\^{′}/g, '′')
+    .replace(/([|\\])\s*\{\}/g, '$1');
 };
 
 const MAX_SHORT_LATEX_LENGTH = 4;

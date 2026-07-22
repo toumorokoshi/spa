@@ -66,8 +66,12 @@ const getLatexIndicators = (): string[] => {
 
 const LATEX_INDICATORS = getLatexIndicators();
 
+const isHtml = (str: string): boolean => {
+  return /<[a-z/][\s\S]*>/i.test(str);
+};
+
 const detectFormat = (payload: ClipboardDataPayload): InputFormat => {
-  if (payload.htmlText) {
+  if (payload.htmlText || isHtml(payload.plainText)) {
     return 'html';
   }
 
@@ -489,10 +493,6 @@ const replaceMathTags = (
   return before + replaceMathTags(after, replaceFn);
 };
 
-const isHtml = (str: string): boolean => {
-  return /<[a-z/][\s\S]*>/i.test(str);
-};
-
 const cleanHtmlMathToUnicode = (html: string): string => {
   const replaceFn = (innerContent: string, startTag: string): string => {
     const rawLatex = extractLatexFromMathHtml(innerContent, startTag);
@@ -630,11 +630,17 @@ const convertHtml = (html: string): ConvertedOutputs => {
 
 const convertLatex = (plainText: string): ConvertedOutputs => {
   const normalized = normalizeInput(plainText);
-  const textWithMath = processDisplayStyleToUnicode(normalized);
+  const textInput = isHtml(normalized)
+    ? cleanHtmlMathToUnicode(normalized)
+    : normalized;
+  const textWithMath = processDisplayStyleToUnicode(textInput);
   const plaintext = latexToText(textWithMath);
   const markdown = plaintext;
 
-  const htmlWithMath = processDisplayStyleToMathML(normalized);
+  const htmlInput = isHtml(normalized)
+    ? cleanHtmlMathToMathML(normalized)
+    : normalized;
+  const htmlWithMath = processDisplayStyleToMathML(htmlInput);
   const hasLatexDelimiters = /\$|\\\[|\\\]|\\\(|\\\)/.test(htmlWithMath);
   const hasMathML = htmlWithMath.includes('<math');
   const html =
