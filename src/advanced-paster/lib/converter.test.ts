@@ -99,22 +99,17 @@ describe('latexToMathML', () => {
     expect(latexToMathML('\\mathbf{v}')).not.toContain('mathvariant="bold"');
   });
 
-  it('combines consecutive single-character mi elements into a single mi for words', () => {
-    expect(latexToMathML('Loss')).toContain('<mi>Loss</mi>');
-    expect(latexToMathML('Loss_{L1}')).toContain('<msub><mi>Loss</mi>');
-  });
-
-  it('handles complex math expressions with multi-letter words correctly', () => {
-    const mathml = latexToMathML(
-      'Loss_{L1} = Loss_{original} + \\lambda \\sum_{i=1}^{n} |w_i|'
-    );
-    expect(mathml).toContain(
-      '<msub><mi>Loss</mi><mrow><mi>L</mi><mn>1</mn></mrow></msub>'
-    );
-    expect(mathml).toContain(
-      '<msub><mi>Loss</mi><mrow><mi>original</mi></mrow></msub>'
-    );
-    expect(mathml).toContain('<msub><mi>w</mi><mi>i</mi></msub>');
+  it('handles HTML math containers with data-math attributes (e.g. Gemini pasted HTML)', () => {
+    const payload = {
+      plainText: '',
+      htmlText:
+        '<div class="math-block" data-math="\\text{Loss}_{\\text{L1}} = \\text{Loss}_{\\text{original}} + \\lambda \\sum_{i=1}^{n} \\vert{}w_i\\vert{}">$$\\text{Loss}_{\\text{L1}} = \\text{Loss}_{\\text{original}} + \\lambda \\sum_{i=1}^{n} \\vert{}w_i\\vert{}$$</div>'
+    };
+    const result = convert(payload, 'auto');
+    expect(result.html).toContain('<mtext>Loss</mtext>');
+    expect(result.html).toContain('<mtext>L1</mtext>');
+    expect(result.html).toContain('<mtext>original</mtext>');
+    expect(result.plaintext).toContain('Loss');
   });
 });
 

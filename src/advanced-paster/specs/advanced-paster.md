@@ -38,7 +38,7 @@ Used when the input is HTML. It processes the payload (`payload.htmlText` or fal
 1. **Normalization**: Replaces non-breaking space characters (`\u00a0`) with standard spaces and strips all zero-width, invisible formatting, and directional characters (e.g., ZWSP, ZWNJ, ZWJ, LRM, RLM, BOM, WJ, SHY).
 2. **Pre-processing**: If the input does not contain HTML tags (checked via `isHtml`), it passes the text through `processDisplayStyleToMathML` and `processDisplayStyleToUnicode` to handle any raw block-style LaTeX before parsing.
 3. **Generating HTML Output**:
-   - Invokes [cleanHtmlMathToMathML](../lib/converter.ts#L473), which finds MathML elements (in containers with classes like `katex` or `mwe-math-element`, or raw `<math>` tags), extracts raw LaTeX from their `<annotation>` tags, alttext, or image alt attributes, and re-renders them cleanly with Temml.
+   - Invokes [cleanHtmlMathToMathML](../lib/converter.ts#L473), which finds HTML math containers (elements with `data-math`, `data-latex`, or `data-tex` attributes, or classes like `math-block`, `math-inline`, `katex`, `mwe-math-element`, or raw `<math>` tags), extracts raw LaTeX from attributes, `<annotation>` tags, alttext, or image alt attributes, and re-renders them cleanly with Temml.
    - Invokes [convertEmbeddedLatexToMathML](../lib/latex.ts#L552) to convert any remaining inline LaTeX syntax (e.g. `$ ... $`) inside the HTML body to MathML blocks.
    - Extracts all `<math>` blocks temporarily and replaces them with placeholders.
    - Sanitizes the rest of the HTML structure: removes `<style>` blocks, `<meta>` tags, font tags (`<font>`), span tags (`<span>`), and presentation attributes (`style`, `class`, `id`, `color`, `bgcolor`, `align`, `valign`, `width`, `height`).
@@ -119,12 +119,6 @@ Translates a LaTeX segment to MathML using `temml.renderToString` after shared L
 - `displayMode`: Toggles block vs inline math.
 - `annotate: true`: Generates the `<annotation encoding="application/x-tex">` block containing the preprocessed LaTeX string.
 - `throwOnError: false`: Catches syntax errors gracefully, coloring invalid commands red (`#b22222`) inside `<mtext>` blocks instead of crashing.
-
-After rendering, the MathML output is post-processed via `postProcessMathML`:
-
-- Groups consecutive single-character `<mi>` elements representing ASCII letters in row containers (`<mrow>`, `<math>`, etc.) into single `<mi>` elements for multi-letter identifier words (e.g. `<mi>L</mi><mi>o</mi><mi>s</mi><mi>s</mi>` -> `<mi>Loss</mi>`).
-- Merges single-letter `<mi>` elements preceding script elements (`<msub>`, `<msup>`, `<msubsup>`) with single-letter base elements (e.g. `<mi>L</mi><mi>o</mi><mi>s</mi><msub><mi>s</mi><sub>L1</sub>` -> `<msub><mi>Loss</mi><sub>L1</sub>`).
-- Groups single-letter `<mi>` elements within script parameters (such as `Loss_{original}`, rendering `<mi>original</mi>`).
 
 ### `convertEmbeddedLatexToUnicode` and `convertEmbeddedLatexToMathML`
 
