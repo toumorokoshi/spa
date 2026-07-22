@@ -35,3 +35,13 @@ When copying from sources like Wikipedia, math formulas are often duplicated in 
 - It normalizes both strings by mapping Unicode symbols/superscripts/subscripts back to their basic characters and stripping formatting and non-alphanumeric characters.
 - It validates the common prefix length against a threshold (using `DEDUPLICATE_PREFIX_RATIO`).
 - To prevent false-positive matches (such as when a candidate starts matching a prefix but contains a large trailing unmatched segment from adjacent formulas), it enforces that the normalized lengths of the fallback and expected strings do not differ by more than a factor of `2.0`.
+
+### MathML Multi-Letter Identifier Strategy
+
+When Temml renders LaTeX expressions containing multi-letter words (e.g. `Loss`), standard LaTeX math mode treats each character as an individual math variable, resulting in separate `<mi>` elements for each character (e.g., `<mi>L</mi><mi>o</mi><mi>s</mi><mi>s</mi>`).
+
+The converter post-processes generated MathML strings (`postProcessMathML` in `latex.ts`):
+
+- It traverses row containers (`<mrow>`, `<math>`, etc.) and groups adjacent single-letter `<mi>` elements representing ASCII letters.
+- Consecutive single-letter `<mi>` elements (e.g. `<mi>L</mi><mi>o</mi><mi>s</mi><mi>s</mi>`) are merged into a single `<mi>` element (`<mi>Loss</mi>`).
+- If single-letter `<mi>` elements precede a script element (`<msub>`, `<msup>`, `<msubsup>`) whose base is also a single-letter `<mi>`, they merge into the script base (e.g., `<mi>L</mi><mi>o</mi><mi>s</mi><msub><mi>s</mi><sub>L1</sub>` becomes `<msub><mi>Loss</mi><sub>L1</sub>`).

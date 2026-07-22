@@ -517,17 +517,144 @@ export const latexToText = (latex: string): string => {
 
 const MAX_SHORT_LATEX_LENGTH = 4;
 
+const SCRIPT_TAGS = new Set([
+  'msub',
+  'msup',
+  'msubsup',
+  'mfrac',
+  'mmultiscripts'
+]);
+
+const isSingleLetterMi = (el: Element | null): boolean => {
+  if (!el || el.tagName.toLowerCase() !== 'mi') {
+    return false;
+  }
+  return /^[a-zA-Z]$/.test(el.textContent?.trim() || '');
+};
+
+const getMergedWord = (miList: Element[], extraText = ''): string =>
+  miList.map((el) => el.textContent?.trim() || '').join('') + extraText;
+
+const mergeScriptBase = (miList: Element[], nextEl: Element): boolean => {
+  const baseEl = nextEl.firstElementChild;
+  if (!isSingleLetterMi(baseEl) || !baseEl) {
+    return false;
+  }
+  baseEl.textContent = getMergedWord(miList, baseEl.textContent?.trim() || '');
+  miList.forEach((el) => el.remove());
+  return true;
+};
+
+const mergeConsecutiveMi = (miList: Element[]): boolean => {
+  if (miList.length < 2) {
+    return false;
+  }
+  const word = getMergedWord(miList);
+  miList[0].textContent = word;
+  miList.slice(1).forEach((el) => el.remove());
+  return true;
+};
+
+const mergeMiNodes = (miList: Element[], nextEl?: Element): boolean => {
+  const isScript = Boolean(
+    nextEl && SCRIPT_TAGS.has(nextEl.tagName.toLowerCase())
+  );
+
+  if (isScript && nextEl && mergeScriptBase(miList, nextEl)) {
+    return true;
+  }
+
+  return mergeConsecutiveMi(miList);
+};
+
+const groupMiChildren = (children: Element[]): Element[][] => {
+  return children.reduce<Element[][]>((groups, child) => {
+    const isMi = isSingleLetterMi(child);
+    const lastGroup = groups[groups.length - 1];
+    if (isMi && lastGroup && isSingleLetterMi(lastGroup[0])) {
+      lastGroup.push(child);
+      return groups;
+    }
+    return [...groups, [child]];
+  }, []);
+};
+
+const processGroup = (
+  group: Element[],
+  index: number,
+  allGroups: Element[][]
+): void => {
+  if (!isSingleLetterMi(group[0])) {
+    return;
+  }
+  const nextGroup = allGroups[index + 1];
+  const nextEl = nextGroup ? nextGroup[0] : undefined;
+  mergeMiNodes(group, nextEl);
+};
+
+const processRowContainer = (parent: Element): void => {
+  const children = Array.from(parent.children);
+  const groups = groupMiChildren(children);
+  groups.forEach((group, index) => processGroup(group, index, groups));
+};
+
+const processContainer = (parent: Element): void => {
+  const parentTag = parent.tagName.toLowerCase();
+  if (!SCRIPT_TAGS.has(parentTag)) {
+    processRowContainer(parent);
+  }
+  Array.from(parent.children).forEach(processContainer);
+};
+
+const extractLettersFromMatch = (match: string): string[] => {
+  const miRegex = /<mi\b[^>]*>\s*([a-zA-Z])\s*<\/mi>/g;
+  return Array.from(match.matchAll(miRegex), (m) => m[1]);
+};
+
+const fallbackPostProcess = (mathml: string): string => {
+  return mathml.replace(
+    /(?:<mi\b[^>]*>\s*([a-zA-Z])\s*<\/mi>\s*){2,}/g,
+    (match) => `<mi>${extractLettersFromMatch(match).join('')}</mi>`
+  );
+};
+
+/**
+ * Post-processes a MathML string to combine consecutive single-character <mi> elements
+ * (e.g. <mi>L</mi><mi>o</mi><mi>s</mi><mi>s</mi>) into a single <mi> element (<mi>Loss</mi>).
+ * Also merges preceding single-letter <mi> elements with single-letter base elements of scripts
+ * (e.g. <mi>L</mi><mi>o</mi><mi>s</mi><msub><mi>s</mi>... -> <msub><mi>Loss</mi>...).
+ */
+export const postProcessMathML = (mathml: string): string => {
+  if (!mathml) {
+    return mathml;
+  }
+
+  if (typeof DOMParser === 'undefined') {
+    return fallbackPostProcess(mathml);
+  }
+
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(mathml, 'text/html');
+    processContainer(doc.body);
+    return doc.body.innerHTML;
+  } catch (e) {
+    console.error('MathML post-processing error:', e);
+    return mathml;
+  }
+};
+
 /**
  * Converts a single LaTeX math expression into a MathML block using Temml.
  */
 export const latexToMathML = (latex: string, displayMode = false): string => {
-  try {
     const cleanLatex = stripMathbfWrappers(normalizeInput(latex));
-    return temml.renderToString(cleanLatex, {
+    const raw = temml.renderToString(cleanLatex, {
       displayMode,
       annotate: true,
       throwOnError: false
     });
+    return postProcessMathML(raw);
   } catch (e) {
     console.error('Temml error:', e);
     const cleanLatex = stripMathbfWrappers(normalizeInput(latex));

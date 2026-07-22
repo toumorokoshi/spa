@@ -98,6 +98,24 @@ describe('latexToMathML', () => {
     expect(latexToMathML('\\mathbf{v}')).not.toContain('\\mathbf');
     expect(latexToMathML('\\mathbf{v}')).not.toContain('mathvariant="bold"');
   });
+
+  it('combines consecutive single-character mi elements into a single mi for words', () => {
+    expect(latexToMathML('Loss')).toContain('<mi>Loss</mi>');
+    expect(latexToMathML('Loss_{L1}')).toContain('<msub><mi>Loss</mi>');
+  });
+
+  it('handles complex math expressions with multi-letter words correctly', () => {
+    const mathml = latexToMathML(
+      'Loss_{L1} = Loss_{original} + \\lambda \\sum_{i=1}^{n} |w_i|'
+    );
+    expect(mathml).toContain(
+      '<msub><mi>Loss</mi><mrow><mi>L</mi><mn>1</mn></mrow></msub>'
+    );
+    expect(mathml).toContain(
+      '<msub><mi>Loss</mi><mrow><mi>original</mi></mrow></msub>'
+    );
+    expect(mathml).toContain('<msub><mi>w</mi><mi>i</mi></msub>');
+  });
 });
 
 describe('converter', () => {
