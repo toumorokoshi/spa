@@ -420,9 +420,12 @@ const decodeHtmlEntities = (str: string): string => {
 };
 
 const extractDataMathAttribute = (tag: string): string | null => {
-  const match = /\bdata-(?:math|latex|tex)="([^"]+)"/i.exec(tag);
+  const match =
+    /\bdata-(?:math|latex|tex)=(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(tag);
   if (match) {
-    return decodeHtmlEntities(match[1].trim());
+    // eslint-disable-next-line no-magic-numbers
+    const val = match[1] ?? match[2] ?? match[3] ?? '';
+    return decodeHtmlEntities(val.trim());
   }
   return null;
 };

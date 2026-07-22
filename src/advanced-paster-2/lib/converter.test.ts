@@ -60,6 +60,51 @@ describe('detectFormat', () => {
 });
 
 describe('convertHtml', () => {
+  it('handles div with data-math containing \\text{} correctly without splitting into individual <mi> elements', () => {
+    const inputHtml =
+      '<div class="math-block" data-math="\\text{Loss}_{\\text{L1}} = \\text{Loss}_{\\text{original}} + \\lambda \\sum_{i=1}^{n} \\vert{}w_i\\vert{}" style="font-family: &quot;Google Sans Text&quot;, sans-serif !important; line-height: 1.15 !important; margin-top: 0px !important;">$$\\text{Loss}_{\\text{L1}} = \\text{Loss}_{\\text{original}} + \\lambda \\sum_{i=1}^{n} \\vert{}w_i\\vert{}$$</div>';
+    const res = convertHtml(inputHtml);
+    expect(res.html).toContain('<mtext>Loss</mtext>');
+    expect(res.html).toContain('<mtext>L1</mtext>');
+    expect(res.html).not.toContain('<mi>L</mi><mi>o</mi><mi>s</mi><mi>s</mi>');
+  });
+
+  it('handles data-math with html entities like &lt; &gt; &amp; &quot;', () => {
+    const inputHtml =
+      '<div class="math-block" data-math="\\text{Loss} &lt; \\text{gain}">$$\\text{Loss} &lt; \\text{gain}$$</div>';
+    const res = convertHtml(inputHtml);
+    expect(res.html).toContain('<mtext>Loss</mtext>');
+    expect(res.html).toContain('<mtext>gain</mtext>');
+  });
+
+  it('handles span with data-math', () => {
+    const inputHtml =
+      '<span class="math-inline" data-math="\\text{loss}">$$\\text{loss}$$</span>';
+    const res = convertHtml(inputHtml);
+    expect(res.html).toContain('<mtext>loss</mtext>');
+  });
+
+  it('handles data-math with &quot; in adjacent style attribute', () => {
+    const inputHtml =
+      '<div class="math-block" data-math="\\text{Loss} = 1" style="font-family: &quot;Google Sans&quot;;">$$\\text{Loss} = 1$$</div>';
+    const res = convertHtml(inputHtml);
+    expect(res.html).toContain('<mtext>Loss</mtext>');
+  });
+
+  it('handles math-block div WITHOUT data-math attribute', () => {
+    const inputHtml =
+      '<div class="math-block">$$\\text{Loss}_{\\text{L1}} = \\text{Loss}_{\\text{original}} + \\lambda \\sum_{i=1}^{n} \\vert{}w_i\\vert{}$$</div>';
+    const res = convertHtml(inputHtml);
+    expect(res.html).toContain('<mtext>Loss</mtext>');
+  });
+
+  it('handles data-math containing > inside attribute value', () => {
+    const inputHtml =
+      '<div class="math-block" data-math="\\text{Loss} > \\text{Gain}">$$\\text{Loss} > \\text{Gain}$$</div>';
+    const res = convertHtml(inputHtml);
+    console.log('TEST 6 OUTPUT:\n', res.html);
+  });
+
   it('generates debug steps for HTML pipeline', () => {
     const res = convertHtml('<h1>Title</h1><p>Body</p>');
     expect(res.debugSteps).toBeDefined();

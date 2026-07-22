@@ -298,20 +298,50 @@ export const processDisplayStyleToUnicode = (html: string): string =>
 export const processDisplayStyleToMathML = (html: string): string =>
   processDisplayStyleMath(html, false);
 
+export const decodeHtmlEntities = (str: string): string => {
+  return (
+    str
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      // eslint-disable-next-line quotes
+      .replace(/&(?:#39|#x27|apos);/g, "'")
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&bsol;/g, '\\')
+      .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)))
+      .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
+        String.fromCharCode(parseInt(hex, 16))
+      )
+  );
+};
+
 const extractLatexFromMathHtml = (mathHtml: string): string | null => {
   const annotationMatch =
     /<annotation[^>]*encoding=["'](?:application\/x-tex|TeX)["'][^>]*>([\s\S]*?)<\/annotation>/i.exec(
       mathHtml
     );
-  if (annotationMatch) return annotationMatch[1].trim();
+  if (annotationMatch) return decodeHtmlEntities(annotationMatch[1].trim());
 
-  const dataMathMatch = /data-(?:math|latex|tex)=["']([^"']+)["']/i.exec(
+  const dataMathMatch =
+    /data-(?:math|latex|tex)=(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(mathHtml);
+  if (dataMathMatch) {
+    const val = dataMathMatch[1] ?? dataMathMatch[2] ?? dataMathMatch[3] ?? '';
+    return decodeHtmlEntities(val.trim());
+  }
+
+  const altMatch = /alt=(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(mathHtml);
+  if (altMatch) {
+    const val = altMatch[1] ?? altMatch[2] ?? altMatch[3] ?? '';
+    return decodeHtmlEntities(val.trim());
+  }
+
+  const delimitedMatch = /(\$\$|\\\[|\\\()([\s\S]*?)(\$\$|\\\]|\\\))/i.exec(
     mathHtml
   );
-  if (dataMathMatch) return dataMathMatch[1].trim();
-
-  const altMatch = /alt=["']([^"']+)["']/i.exec(mathHtml);
-  if (altMatch) return altMatch[1].trim();
+  if (delimitedMatch) {
+    return decodeHtmlEntities(delimitedMatch[2].trim());
+  }
 
   return null;
 };
@@ -321,7 +351,10 @@ const findMatchingClosingTag = (
   startIndex: number,
   tagName: string
 ): number => {
-  const openTagRegex = new RegExp(`<${tagName}[^>]*>`, 'gi');
+  const openTagRegex = new RegExp(
+    `<${tagName}(?:\\s+(?:[^\\s>="']+(?:=(?:"[^"]*"|'[^']*'|[^\\s>]+))?))*\\s*>`,
+    'gi'
+  );
   const closeTagRegex = new RegExp(`</${tagName}>`, 'gi');
 
   let depth = 1;
@@ -349,18 +382,31 @@ const findMatchingClosingTag = (
   return -1;
 };
 
+const isMathContainerOpenTag = (openTag: string): boolean => {
+  return (
+    /<math\b/i.test(openTag) ||
+    /data-(?:math|latex|tex)=/i.test(openTag) ||
+    /class=["'][^"']*?\b(?:math-block|math-inline|katex|mwe-math-element)\b[^"']*?["']/i.test(
+      openTag
+    )
+  );
+};
+
 const replaceHtmlContainers = (
   html: string,
-  convertMathFn: (latex: string) => string
+  convertMathFn: (latex: string, isDisplay: boolean) => string
 ): string => {
   const containerPattern =
-    /<(div|span|math|span|mwe-math-element)[^>]*?(?:class=["'][^"']*?\b(?:math-block|math-inline|katex|mwe-math-element)\b[^"']*?["']|data-(?:math|latex|tex)=["'][^"']+?["'])[^>]*>/gi;
+    /<(div|span|math|mwe-math-element)(?:\s+(?:[^\s>="']+(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?))*\s*>/gi;
 
   let result = '';
   let lastIndex = 0;
   let match;
 
   while ((match = containerPattern.exec(html)) !== null) {
+    const openTag = match[0];
+    if (!isMathContainerOpenTag(openTag)) continue;
+
     const tagName = match[1];
     const startIndex = match.index;
     const openTagLength = match[0].length;
@@ -377,8 +423,13 @@ const replaceHtmlContainers = (
     const latex = extractLatexFromMathHtml(fullContainerHtml);
 
     if (latex) {
+      const isDisplay =
+        tagName.toLowerCase() === 'div' ||
+        /math-block/i.test(openTag) ||
+        /\$\$|\\\[/.test(fullContainerHtml);
+
       result += html.slice(lastIndex, startIndex);
-      result += convertMathFn(latex);
+      result += convertMathFn(latex, isDisplay);
       lastIndex = endIndex;
       containerPattern.lastIndex = endIndex;
     }
@@ -389,7 +440,9 @@ const replaceHtmlContainers = (
 };
 
 export const cleanHtmlMathToMathML = (html: string): string => {
-  return replaceHtmlContainers(html, (latex) => latexToMathML(latex, false));
+  return replaceHtmlContainers(html, (latex, isDisplay) =>
+    latexToMathML(latex, isDisplay)
+  );
 };
 
 export const cleanHtmlMathToUnicode = (html: string): string => {
