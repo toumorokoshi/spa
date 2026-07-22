@@ -120,6 +120,12 @@ Translates a LaTeX segment to MathML using `temml.renderToString` after shared L
 - `annotate: true`: Generates the `<annotation encoding="application/x-tex">` block containing the preprocessed LaTeX string.
 - `throwOnError: false`: Catches syntax errors gracefully, coloring invalid commands red (`#b22222`) inside `<mtext>` blocks instead of crashing.
 
+After rendering, the MathML output is post-processed via `postProcessMathML`:
+
+- Groups consecutive single-character `<mi>` elements representing ASCII letters in row containers (`<mrow>`, `<math>`, etc.) into single `<mi>` elements for multi-letter identifier words (e.g. `<mi>L</mi><mi>o</mi><mi>s</mi><mi>s</mi>` -> `<mi>Loss</mi>`).
+- Merges single-letter `<mi>` elements preceding script elements (`<msub>`, `<msup>`, `<msubsup>`) with single-letter base elements (e.g. `<mi>L</mi><mi>o</mi><mi>s</mi><msub><mi>s</mi><sub>L1</sub>` -> `<msub><mi>Loss</mi><sub>L1</sub>`).
+- Groups single-letter `<mi>` elements within script parameters (such as `Loss_{original}`, rendering `<mi>original</mi>`).
+
 ### `convertEmbeddedLatexToUnicode` and `convertEmbeddedLatexToMathML`
 
 Parses embedded LaTeX blocks sequentially:
