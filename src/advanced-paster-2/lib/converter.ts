@@ -201,12 +201,21 @@ const hasWordBoundary = (before: string, suffixIndex: number): boolean => {
   return !/[a-zA-Z0-9]/.test(prevChar);
 };
 
+const isInsideHtmlTag = (str: string, index: number): boolean => {
+  const lastOpen = str.lastIndexOf('<', index);
+  const lastClose = str.lastIndexOf('>', index);
+  return lastOpen > lastClose;
+};
+
 const isCandidateMatch = (
   before: string,
   candidate: string,
   index: number,
   converted: string
 ): boolean => {
+  if (isInsideHtmlTag(before, index)) {
+    return false;
+  }
   return (
     candidate.trim() !== '' &&
     !/\s/.test(candidate[0]) &&
@@ -457,9 +466,7 @@ export const convertHtml = (rawInput: string): ConvertedOutputs => {
   const normalized = normalizeInput(rawInput);
   steps.push({ stepName: '2. Normalize Input', output: normalized });
 
-  const htmlWithMath = isHtml(normalized)
-    ? normalized
-    : processDisplayStyleToMathML(normalized);
+  const htmlWithMath = processDisplayStyleToMathML(normalized);
   steps.push({
     stepName: '3. Pre-process Display Style MathML',
     output: htmlWithMath
@@ -477,9 +484,7 @@ export const convertHtml = (rawInput: string): ConvertedOutputs => {
     output: processedHtmlForHtml
   });
 
-  const htmlWithMathText = isHtml(normalized)
-    ? normalized
-    : processDisplayStyleToUnicode(normalized);
+  const htmlWithMathText = processDisplayStyleToUnicode(normalized);
   steps.push({
     stepName: '6. Pre-process Display Style Unicode',
     output: htmlWithMathText

@@ -177,12 +177,21 @@ const hasWordBoundary = (before: string, suffixIndex: number): boolean => {
   return !/[a-zA-Z0-9]/.test(prevChar);
 };
 
+const isInsideHtmlTag = (str: string, index: number): boolean => {
+  const lastOpen = str.lastIndexOf('<', index);
+  const lastClose = str.lastIndexOf('>', index);
+  return lastOpen > lastClose;
+};
+
 const isCandidateMatch = (
   before: string,
   candidate: string,
   index: number,
   converted: string
 ): boolean => {
+  if (isInsideHtmlTag(before, index)) {
+    return false;
+  }
   return (
     candidate.trim() !== '' &&
     !/\s/.test(candidate[0]) &&

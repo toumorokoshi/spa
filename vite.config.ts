@@ -26,6 +26,9 @@ const discoverEntryPoints = (): Record<string, string> => {
 export default defineConfig({
   plugins: [preact()],
   base: '/spa/',
+  optimizeDeps: {
+    exclude: ['temml']
+  },
   build: {
     rollupOptions: {
       input: discoverEntryPoints()
