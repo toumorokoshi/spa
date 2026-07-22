@@ -1,19 +1,10 @@
 # Advanced Paster
 
-A utility single-page application to selectively strip and reformat pasted content based on the source and target.
+`advanced-paster` is a single-page application for converting pasted clipboard content into Plaintext, Markdown, and HTML, with an emphasis on user curation, raw input visibility, and stage-by-stage pipeline transformation debugging.
 
-## Features
+## Key Features
 
-- **Pasting Options**: Paste anywhere on the page (global event) or into the dedicated input area.
-- **Auto-Detection**: Automatically detects if the content is HTML, Markdown, or LaTeX (with manual override).
-- **Multi-Format Output**: View your pasted content converted into:
-  - HTML (Rich Text)
-  - Markdown
-  - Plaintext
-- **Quick Copy**: One-click copy buttons to get the content in exactly the format you need.
-
-## Usage
-
-1. Open the application.
-2. Paste your content.
-3. Review the outputs and click "Copy" on the desired format.
+1. **Text Type Detection**: Automatically detects input type (`html`, `latex`, `markdown`) and displays the rationale behind detection.
+2. **Raw Clipboard Inputs Row**: Presents raw `plainText` and `htmlText` (including raw HTML source code when HTML content is pasted) alongside character-by-character inspection tools.
+3. **Curated Transformation Debug Pipeline**: Exposes a step-by-step debug view showing intermediate text transformations across all pipeline stages.
+4. **Multi-Format Output Columns**: Outputs Rendered HTML, HTML Source, Markdown, and Plaintext.

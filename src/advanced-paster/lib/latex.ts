@@ -5,7 +5,7 @@ export const normalizeInput = (text: string): string =>
     .replace(/\u00a0/g, ' ')
     .replace(/[\u200b-\u200f\ufeff\u2060\u00ad\u202a-\u202e]/g, '');
 
-const findMatchingBrace = (
+export const findMatchingBrace = (
   text: string,
   index: number,
   braceCount: number
@@ -462,13 +462,35 @@ const convertSuperscriptsAndSubscripts = (text: string): string => {
     );
 };
 
+export const unwrapStyleCommands = (text: string): string => {
+  const pattern = /\{\s*\\(?:display|text|script|scriptscript)style/i;
+  const match = pattern.exec(text);
+  if (!match) {
+    return text.replace(/\\(?:display|text|script|scriptscript)style\s*/gi, '');
+  }
+  const startIdx = match.index;
+  const matchLength = match[0].length;
+  const openBraceIdx = startIdx;
+  const closeIdx = findMatchingBrace(text, openBraceIdx + 1, 1);
+  if (closeIdx <= text.length && text[closeIdx - 1] === '}') {
+    const before = text.slice(0, startIdx);
+    const inner = text.slice(startIdx + matchLength, closeIdx - 1);
+    const after = text.slice(closeIdx);
+    return unwrapStyleCommands(before + inner + after);
+  }
+  const before = text.slice(0, startIdx + matchLength);
+  const after = text.slice(startIdx + matchLength);
+  return before + unwrapStyleCommands(after);
+};
+
 /**
  * Pure function that performs a best-effort conversion of LaTeX strings
  * to plain text with unicode symbols.
  * Strips out structural macros but preserves their content where possible.
  */
 export const latexToText = (latex: string): string => {
-  const normalized = stripMathbfWrappers(normalizeInput(latex))
+  const unwrapped = unwrapStyleCommands(latex);
+  const normalized = stripMathbfWrappers(normalizeInput(unwrapped))
     .replace(
       /\\(mathbb|mathcal|mathbf|mathrm|mathit|text|textbf|textit|frac|tfrac|dfrac|cfrac|boldsymbol|bold|mathsf|operatorname|widehat|vec|underbrace)\s+({)/g,
       '\\$1$2'

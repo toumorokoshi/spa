@@ -1,47 +1,23 @@
-# Advanced Paster Design
+# Advanced Paster Architecture and Design
 
-## Core Architecture
+## Overview
 
-This application follows strict functional programming principles and separates state/IO from core logic.
+`advanced-paster` decouples state and IO shell components from pure, functional transformation logic:
 
-### IO and State (The Shell)
+- `index.tsx`: Preact UI shell managing clipboard event listeners, format selector, raw inputs view, text type detection banner, and transformation debug pipeline UI.
+- `lib/converter.ts`: Conversion orchestrator exposing `detectFormatDetails` and recording step-by-step `debugSteps` for `convertHtml`, `convertLatex`, and `convertMarkdown`.
+- `lib/latex.ts`: Functional translation layer from LaTeX math to MathML and Unicode text.
 
-The main Preact component (`App`) handles all side-effects:
+## Core Features
 
-- Listening for global clipboard events (`window.addEventListener('paste', ...)`).
-- Managing the `textarea` DOM events.
-- Interacting with `navigator.clipboard` to write output.
-- Managing the internal state (`rawText`, `detectedFormat`).
+### 1. Text Type Detection
 
-### Core Logic (The Core)
+`detectFormatDetails` inspects `payload.htmlText` and `payload.plainText` to classify input as `html`, `latex`, or `markdown` and provides a human-readable explanation of why the format was selected.
 
-The `lib/` directory contains pure, side-effect-free transformation logic:
+### 2. Raw Inputs Row
 
-- `converter.ts`: Orchestrates the conversions. Given an input format and string, it returns a data structure containing all three converted formats (`html`, `markdown`, `plaintext`).
-- `latex.ts`: Provides conversion from LaTeX math expressions to MathML using Temml (for high-fidelity HTML output) and best-effort Unicode translation (for Markdown and Plaintext). Shared preprocessing strips invisible characters and unwraps `\mathbf{...}` wrappers before either path runs.
+Exposes raw inputs (`plainText` and `htmlText`) side-by-side. When HTML is pasted, `htmlText` is presented as raw HTML source code, enabling users to inspect the exact structure received from the system clipboard.
 
-### Third-Party Libraries
+### 3. Debug Pipeline Transformation Stages
 
-We use established libraries to ensure high-quality parsing:
-
-- `turndown`: HTML -> Markdown
-- `marked`: Markdown -> HTML
-- `temml`: LaTeX -> MathML
-
-### Math Deduplication Strategy
-
-When copying from sources like Wikipedia, math formulas are often duplicated in different formats side-by-side (e.g., plaintext fallback and Unicode/LaTeX). The converter uses `isDuplicate` to check if text before a LaTeX block is a duplicate of its converted Unicode counterpart:
-
-- It normalizes both strings by mapping Unicode symbols/superscripts/subscripts back to their basic characters and stripping formatting and non-alphanumeric characters.
-- It validates the common prefix length against a threshold (using `DEDUPLICATE_PREFIX_RATIO`).
-- To prevent false-positive matches (such as when a candidate starts matching a prefix but contains a large trailing unmatched segment from adjacent formulas), it enforces that the normalized lengths of the fallback and expected strings do not differ by more than a factor of `2.0`.
-
-### HTML Math Container Extraction Strategy
-
-When copying from sources like Gemini or Wikipedia, mathematical formulas are wrapped in custom HTML elements or attributes (such as `<div class="math-block" data-math="...">`, `<span class="math-inline" data-math="...">`, `mwe-math-element`, `katex`).
-
-The converter extracts the raw LaTeX expression directly from the container (`data-math`, `data-latex`, `data-tex`, `<annotation>`, or alt attributes) before converting:
-
-- `replaceHtmlContainers` matches elements containing math attributes or class names and finds their matching closing tags.
-- `extractLatexFromMathHtml` reads the embedded LaTeX from `data-*` attributes or annotations.
-- The entire HTML container element is then cleanly replaced with the resulting MathML block (for HTML output) or Unicode string (for Markdown/Plaintext output).
+Every conversion pipeline function (`convertHtml`, `convertLatex`, `convertMarkdown`) records intermediate outputs at each transformation step. The UI renders these stages sequentially in expandable accordion blocks.

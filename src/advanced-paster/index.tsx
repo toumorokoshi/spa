@@ -1,3 +1,4 @@
+/* eslint-disable complexity, max-lines-per-function */
 import { h, render } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
 import 'temml/dist/Temml-Local.css';
@@ -91,6 +92,122 @@ const analyzeCharacters = (str: string): CharInfo[] => {
   });
 };
 
+interface TextTypeBannerProps {
+  detectedFormat?: string;
+  explanation?: string;
+  selectedFormat: InputFormat;
+}
+
+const TextTypeBanner = ({
+  detectedFormat,
+  explanation,
+  selectedFormat
+}: TextTypeBannerProps) => {
+  const badgeColor =
+    detectedFormat === 'html'
+      ? '#28a745'
+      : detectedFormat === 'latex'
+        ? '#6f42c1'
+        : '#007bff';
+
+  return (
+    <div
+      style={{
+        backgroundColor: '#eef6ff',
+        border: '1px solid #b6d4fe',
+        borderRadius: '8px',
+        padding: '16px 20px',
+        marginBottom: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '12px'
+      }}
+    >
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span
+            style={{ fontWeight: 'bold', fontSize: '1rem', color: '#1a1a2e' }}
+          >
+            Detected Input Type:
+          </span>
+          <span
+            style={{
+              backgroundColor: badgeColor,
+              color: '#fff',
+              padding: '4px 10px',
+              borderRadius: '12px',
+              fontWeight: 'bold',
+              fontSize: '0.85rem',
+              textTransform: 'uppercase'
+            }}
+          >
+            {detectedFormat || 'Unknown'}
+          </span>
+          {selectedFormat !== 'auto' && (
+            <span style={{ color: '#666', fontSize: '0.85rem' }}>
+              (Override active: <strong>{selectedFormat}</strong>)
+            </span>
+          )}
+        </div>
+        {explanation && (
+          <p style={{ margin: '6px 0 0 0', color: '#444', fontSize: '0.9rem' }}>
+            {explanation}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+interface RawInputsRowProps {
+  payload: ClipboardDataPayload;
+  copyPlainText: (text: string) => void;
+}
+
+const RawInputsRow = ({ payload, copyPlainText }: RawInputsRowProps) => {
+  const hasHtml = Boolean(payload.htmlText && payload.htmlText.length > 0);
+
+  return (
+    <div style={{ marginBottom: '32px' }}>
+      <h2 style={{ fontSize: '1.25rem', marginBottom: '8px', color: '#222' }}>
+        Raw Clipboard Inputs
+      </h2>
+      <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '16px' }}>
+        Inspect the exact raw input streams received from the clipboard. If HTML
+        content was pasted, the raw HTML markup is displayed alongside raw plain
+        text.
+      </p>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: hasHtml
+            ? 'repeat(auto-fit, minmax(320px, 1fr))'
+            : '1fr',
+          gap: '20px',
+          alignItems: 'stretch'
+        }}
+      >
+        <OutputColumn
+          title="Raw Plain Text (plainText)"
+          content={payload.plainText || '(Empty)'}
+          onCopy={() => copyPlainText(payload.plainText || '')}
+        />
+
+        {hasHtml && (
+          <OutputColumn
+            title="Raw HTML Source (htmlText)"
+            content={payload.htmlText || ''}
+            onCopy={() => copyPlainText(payload.htmlText || '')}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
 interface OutputGridProps {
   plainText: string;
   html: string;
@@ -109,162 +226,56 @@ const OutputGrid = ({
   copyRichText
 }: OutputGridProps) => {
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: '24px',
-        alignItems: 'stretch'
-      }}
-    >
-      <OutputColumn
-        title="Raw Format"
-        content={plainText}
-        onCopy={() => copyPlainText(plainText)}
-      />
-      <OutputColumn
-        title="Rendered HTML"
-        content={html}
-        onCopy={() => copyRichText(html)}
-        isHtmlRender
-      />
-      <OutputColumn
-        title="HTML Source"
-        content={html}
-        onCopy={() => copyPlainText(html)}
-      />
-      <OutputColumn
-        title="Markdown"
-        content={markdown}
-        onCopy={() => copyPlainText(markdown)}
-      />
-      <OutputColumn
-        title="Plaintext"
-        content={plaintext}
-        onCopy={() => copyPlainText(plaintext)}
-      />
+    <div style={{ marginBottom: '32px' }}>
+      <h2 style={{ fontSize: '1.25rem', marginBottom: '16px', color: '#222' }}>
+        Converted Output Formats
+      </h2>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '24px',
+          alignItems: 'stretch'
+        }}
+      >
+        <OutputColumn
+          title="Raw Input Format"
+          content={plainText}
+          onCopy={() => copyPlainText(plainText)}
+        />
+        <OutputColumn
+          title="Rendered HTML"
+          content={html}
+          onCopy={() => copyRichText(html)}
+          isHtmlRender
+        />
+        <OutputColumn
+          title="HTML Source"
+          content={html}
+          onCopy={() => copyPlainText(html)}
+        />
+        <OutputColumn
+          title="Markdown"
+          content={markdown}
+          onCopy={() => copyPlainText(markdown)}
+        />
+        <OutputColumn
+          title="Plaintext"
+          content={plaintext}
+          onCopy={() => copyPlainText(plaintext)}
+        />
+      </div>
     </div>
   );
 };
 
-interface DebugSectionProps {
-  payload: ClipboardDataPayload;
-  inspectTarget: 'plainText' | 'htmlText';
-  setInspectTarget: (t: 'plainText' | 'htmlText') => void;
-  copyPlainText: (text: string) => void;
+interface DebugPipelineProps {
   debugSteps?: Array<{ stepName: string; output: string }>;
 }
 
-const renderHtmlColumns = (
-  htmlText: string | undefined,
-  copyPlainText: (text: string) => void
-) => {
-  if (htmlText === undefined) {
-    return null;
-  }
-  return [
-    <OutputColumn
-      key="html-unescaped"
-      title="Raw htmlText (unescaped)"
-      content={htmlText}
-      onCopy={() => copyPlainText(htmlText)}
-    />,
-    <OutputColumn
-      key="html-escaped"
-      title="Raw htmlText (escaped)"
-      content={escapeInvisibleChars(htmlText)}
-      onCopy={() => copyPlainText(htmlText)}
-    />
-  ];
-};
+const DebugPipeline = ({ debugSteps }: DebugPipelineProps) => {
+  if (!debugSteps || debugSteps.length === 0) return null;
 
-const renderInspectSelector = (
-  htmlText: string | undefined,
-  inspectTarget: 'plainText' | 'htmlText',
-  setInspectTarget: (t: 'plainText' | 'htmlText') => void
-) => {
-  if (htmlText === undefined) {
-    return null;
-  }
-  return (
-    <div style={{ display: 'flex', gap: '16px' }}>
-      <label style={{ display: 'flex', gap: '6px', cursor: 'pointer' }}>
-        <input
-          type="radio"
-          name="inspectTargetSelect"
-          checked={inspectTarget === 'plainText'}
-          onChange={() => setInspectTarget('plainText')}
-        />
-        plainText
-      </label>
-      <label style={{ display: 'flex', gap: '6px', cursor: 'pointer' }}>
-        <input
-          type="radio"
-          name="inspectTargetSelect"
-          checked={inspectTarget === 'htmlText'}
-          onChange={() => setInspectTarget('htmlText')}
-        />
-        htmlText
-      </label>
-    </div>
-  );
-};
-
-const renderPipelineStepItem = (
-  step: { stepName: string; output: string },
-  idx: number
-) => {
-  return (
-    <details
-      key={idx}
-      style={{
-        border: '1px solid #eee',
-        borderRadius: '4px',
-        backgroundColor: '#fafafa'
-      }}
-    >
-      <summary
-        style={{
-          padding: '10px 14px',
-          fontWeight: 'bold',
-          cursor: 'pointer',
-          userSelect: 'none',
-          outline: 'none'
-        }}
-      >
-        {step.stepName}
-      </summary>
-      <div
-        style={{
-          padding: '14px',
-          borderTop: '1px solid #eee',
-          backgroundColor: '#fff',
-          maxHeight: '250px',
-          overflowY: 'auto'
-        }}
-      >
-        <pre
-          style={{
-            margin: 0,
-            fontSize: '0.85rem',
-            fontFamily: 'monospace',
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-all'
-          }}
-        >
-          {step.output}
-        </pre>
-      </div>
-    </details>
-  );
-};
-
-const renderPipelineSteps = (
-  debugSteps: Array<{ stepName: string; output: string }> | undefined
-) => {
-  if (!debugSteps || debugSteps.length === 0) {
-    return null;
-  }
   return (
     <div
       style={{
@@ -272,193 +283,233 @@ const renderPipelineSteps = (
         backgroundColor: '#fff',
         border: '1px solid #ddd',
         borderRadius: '8px',
-        padding: '20px',
+        padding: '24px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
         marginBottom: '32px'
       }}
     >
-      <h3 style={{ margin: '0 0 8px 0', fontSize: '1.1rem' }}>
-        HTML Conversion Pipeline Steps
-      </h3>
-      <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '16px' }}>
-        View the raw intermediate output of each sequential step executed within
-        the HTML conversion pipeline.
+      <h2 style={{ margin: '0 0 8px 0', fontSize: '1.25rem', color: '#222' }}>
+        Debug Pipeline Transformation Stages
+      </h2>
+      <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '20px' }}>
+        Inspect how the input text is transformed step-by-step through every
+        stage of the curated pipeline.
       </p>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {debugSteps.map((step, idx) => renderPipelineStepItem(step, idx))}
+        {debugSteps.map((step, idx) => (
+          <details
+            key={idx}
+            open={idx === 0 || idx === debugSteps.length - 1}
+            style={{
+              border: '1px solid #e0e0e0',
+              borderRadius: '6px',
+              backgroundColor: '#fafafa'
+            }}
+          >
+            <summary
+              style={{
+                padding: '12px 16px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                userSelect: 'none',
+                outline: 'none',
+                color: '#333'
+              }}
+            >
+              {step.stepName}
+            </summary>
+            <div
+              style={{
+                padding: '16px',
+                borderTop: '1px solid #eee',
+                backgroundColor: '#fff',
+                maxHeight: '300px',
+                overflowY: 'auto'
+              }}
+            >
+              <pre
+                style={{
+                  margin: 0,
+                  fontSize: '0.85rem',
+                  fontFamily: 'monospace',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
+                  color: '#111'
+                }}
+              >
+                {step.output}
+              </pre>
+            </div>
+          </details>
+        ))}
       </div>
     </div>
   );
 };
 
-// eslint-disable-next-line max-lines-per-function
-const DebugClipboardSection = ({
-  payload,
-  inspectTarget,
-  setInspectTarget,
-  copyPlainText,
-  debugSteps
-}: DebugSectionProps) => {
+interface CharInspectorProps {
+  payload: ClipboardDataPayload;
+}
+
+const CharInspector = ({ payload }: CharInspectorProps) => {
+  const [target, setTarget] = useState<'plainText' | 'htmlText'>('plainText');
+
+  const textToAnalyze =
+    target === 'htmlText' ? payload.htmlText || '' : payload.plainText;
+  const charInfos = analyzeCharacters(textToAnalyze);
+
   return (
     <div
       style={{
-        marginTop: '40px',
-        borderTop: '2px solid #eee',
-        paddingTop: '20px'
+        backgroundColor: '#fff',
+        border: '1px solid #ddd',
+        borderRadius: '8px',
+        padding: '24px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+        marginBottom: '32px'
       }}
     >
-      <h2 style={{ marginBottom: '8px' }}>Debug Clipboard Payload</h2>
-      <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '16px' }}>
-        Inspect raw clipboard payload (both unescaped and escaped) and view a
-        character-by-character analysis.
-      </p>
-
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '24px',
-          marginBottom: '32px',
-          alignItems: 'stretch'
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px',
+          marginBottom: '16px'
         }}
       >
-        <OutputColumn
-          title="Raw plainText (unescaped)"
-          content={payload.plainText}
-          onCopy={() => copyPlainText(payload.plainText)}
-        />
-        <OutputColumn
-          title="Raw plainText (escaped)"
-          content={escapeInvisibleChars(payload.plainText)}
-          onCopy={() => copyPlainText(payload.plainText)}
-        />
-        {renderHtmlColumns(payload.htmlText, copyPlainText)}
+        <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#222' }}>
+          Character-by-Character Inspector
+        </h2>
+        {payload.htmlText && (
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <label style={{ display: 'flex', gap: '6px', cursor: 'pointer' }}>
+              <input
+                type="radio"
+                name="inspectTargetSelect2"
+                checked={target === 'plainText'}
+                onChange={() => setTarget('plainText')}
+              />
+              plainText
+            </label>
+            <label style={{ display: 'flex', gap: '6px', cursor: 'pointer' }}>
+              <input
+                type="radio"
+                name="inspectTargetSelect2"
+                checked={target === 'htmlText'}
+                onChange={() => setTarget('htmlText')}
+              />
+              htmlText
+            </label>
+          </div>
+        )}
+      </div>
+
+      <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '16px' }}>
+        Escaped Invisible Characters View:
+      </p>
+      <div
+        style={{
+          padding: '12px',
+          backgroundColor: '#f5f5f5',
+          borderRadius: '6px',
+          fontFamily: 'monospace',
+          fontSize: '0.85rem',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-all',
+          marginBottom: '20px',
+          border: '1px solid #e0e0e0'
+        }}
+      >
+        {escapeInvisibleChars(textToAnalyze) || '(Empty)'}
       </div>
 
       <div
         style={{
-          backgroundColor: '#fff',
-          border: '1px solid #ddd',
-          borderRadius: '8px',
-          padding: '20px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+          maxHeight: '350px',
+          overflowY: 'auto',
+          border: '1px solid #eee',
+          borderRadius: '6px',
+          backgroundColor: '#fafafa'
         }}
       >
-        <div
+        <table
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '12px',
-            marginBottom: '16px'
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: '0.9rem',
+            textAlign: 'left'
           }}
         >
-          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>
-            Character-by-Character Inspector
-          </h3>
-          {renderInspectSelector(
-            payload.htmlText,
-            inspectTarget,
-            setInspectTarget
-          )}
-        </div>
-
-        <div
-          style={{
-            maxHeight: '350px',
-            overflowY: 'auto',
-            border: '1px solid #eee',
-            borderRadius: '4px',
-            backgroundColor: '#fafafa'
-          }}
-        >
-          <table
-            style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              fontSize: '0.9rem',
-              textAlign: 'left'
-            }}
-          >
-            <thead>
+          <thead>
+            <tr
+              style={{
+                backgroundColor: '#eee',
+                borderBottom: '2px solid #ddd'
+              }}
+            >
+              <th style={{ padding: '8px 12px' }}>Index</th>
+              <th style={{ padding: '8px 12px' }}>Glyph / Marker</th>
+              <th style={{ padding: '8px 12px' }}>Unicode Hex</th>
+              <th style={{ padding: '8px 12px' }}>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {charInfos.map((c) => (
               <tr
+                key={c.index}
                 style={{
-                  backgroundColor: '#eee',
-                  borderBottom: '2px solid #ddd'
+                  borderBottom: '1px solid #eee',
+                  fontFamily: 'monospace',
+                  backgroundColor: c.char.startsWith('[')
+                    ? '#fff5f5'
+                    : 'transparent'
                 }}
               >
-                <th style={{ padding: '8px 12px' }}>Index</th>
-                <th style={{ padding: '8px 12px' }}>Glyph / Code Point</th>
-                <th style={{ padding: '8px 12px' }}>Unicode Hex</th>
-                <th style={{ padding: '8px 12px' }}>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              {analyzeCharacters(
-                inspectTarget === 'htmlText'
-                  ? payload.htmlText || ''
-                  : payload.plainText
-              ).map((c) => (
-                <tr
-                  key={c.index}
+                <td style={{ padding: '6px 12px', color: '#888' }}>
+                  {c.index}
+                </td>
+                <td
                   style={{
-                    borderBottom: '1px solid #eee',
-                    fontFamily: 'monospace',
-                    backgroundColor: c.char.startsWith('[')
-                      ? '#fff5f5'
-                      : 'transparent'
+                    padding: '6px 12px',
+                    fontWeight: 'bold',
+                    color: c.char.startsWith('[') ? '#d9534f' : '#222'
                   }}
                 >
-                  <td style={{ padding: '6px 12px', color: '#888' }}>
-                    {c.index}
-                  </td>
-                  <td
-                    style={{
-                      padding: '6px 12px',
-                      fontWeight: 'bold',
-                      color: c.char.startsWith('[') ? '#d9534f' : '#222'
-                    }}
-                  >
-                    {c.char}
-                  </td>
-                  <td style={{ padding: '6px 12px', color: '#31708f' }}>
-                    {c.codePoint}
-                  </td>
-                  <td style={{ padding: '6px 12px', color: '#555' }}>
-                    {c.name}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  {c.char}
+                </td>
+                <td style={{ padding: '6px 12px', color: '#31708f' }}>
+                  {c.codePoint}
+                </td>
+                <td style={{ padding: '6px 12px', color: '#555' }}>{c.name}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-      {renderPipelineSteps(debugSteps)}
     </div>
   );
 };
 
-// eslint-disable-next-line max-lines-per-function
 export const App = () => {
   const [formatOverride, setFormatOverride] = useState<InputFormat>('auto');
-  const [inspectTarget, setInspectTarget] = useState<'plainText' | 'htmlText'>(
-    'plainText'
-  );
   const [payload, setPayload] = useState<ClipboardDataPayload>({
     plainText: ''
   });
   const [outputs, setOutputs] = useState<ConvertedOutputs>({
     html: '',
     markdown: '',
-    plaintext: ''
+    plaintext: '',
+    debugSteps: []
   });
 
   useEffect(() => {
     if (payload.plainText || payload.htmlText) {
       setOutputs(convert(payload, formatOverride));
     } else {
-      setOutputs({ html: '', markdown: '', plaintext: '' });
+      setOutputs({ html: '', markdown: '', plaintext: '', debugSteps: [] });
     }
   }, [payload, formatOverride]);
 
@@ -523,10 +574,12 @@ export const App = () => {
         fontFamily: 'system-ui, -apple-system, sans-serif'
       }}
     >
-      <h1 style={{ marginBottom: '10px' }}>Advanced Paster</h1>
-      <p style={{ color: '#555', marginBottom: '30px' }}>
-        Paste anywhere on the page, or into the box below. It will be converted
-        into multiple formats.
+      <h1 style={{ marginBottom: '10px', color: '#1a1a2e' }}>
+        Advanced Paster
+      </h1>
+      <p style={{ color: '#555', marginBottom: '24px' }}>
+        Curated clipboard pipeline with raw input inspection, text type
+        detection, and stage-by-stage transformation debugging.
       </p>
 
       <div
@@ -587,6 +640,22 @@ export const App = () => {
         />
       </div>
 
+      {(payload.plainText || payload.htmlText) && (
+        <>
+          <TextTypeBanner
+            detectedFormat={outputs.detectedFormat}
+            explanation={outputs.detectionExplanation}
+            selectedFormat={formatOverride}
+          />
+
+          <RawInputsRow payload={payload} copyPlainText={copyPlainText} />
+
+          <DebugPipeline debugSteps={outputs.debugSteps} />
+
+          <CharInspector payload={payload} />
+        </>
+      )}
+
       <OutputGrid
         plainText={payload.plainText}
         html={outputs.html}
@@ -594,14 +663,6 @@ export const App = () => {
         plaintext={outputs.plaintext}
         copyPlainText={copyPlainText}
         copyRichText={copyRichText}
-      />
-
-      <DebugClipboardSection
-        payload={payload}
-        inspectTarget={inspectTarget}
-        setInspectTarget={setInspectTarget}
-        copyPlainText={copyPlainText}
-        debugSteps={outputs.debugSteps}
       />
     </div>
   );
