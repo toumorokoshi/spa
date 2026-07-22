@@ -4,6 +4,7 @@ import {
   detectFormatDetails,
   detectFormat,
   convertHtml,
+  cleanHtmlMathToMathML,
   convertLatex,
   convertMarkdown
 } from './converter';
@@ -60,13 +61,24 @@ describe('detectFormat', () => {
 });
 
 describe('convertHtml', () => {
-  it('handles div with data-math containing \\text{} correctly without splitting into individual <mi> elements', () => {
+  it('handles full HTML document string provided by user directly in cleanHtmlMathToMathML', () => {
     const inputHtml =
-      '<div class="math-block" data-math="\\text{Loss}_{\\text{L1}} = \\text{Loss}_{\\text{original}} + \\lambda \\sum_{i=1}^{n} \\vert{}w_i\\vert{}" style="font-family: &quot;Google Sans Text&quot;, sans-serif !important; line-height: 1.15 !important; margin-top: 0px !important;">$$\\text{Loss}_{\\text{L1}} = \\text{Loss}_{\\text{original}} + \\lambda \\sum_{i=1}^{n} \\vert{}w_i\\vert{}$$</div>';
+      '<meta charset=\'utf-8\'><html><head></head><body><div class="math-block" data-math="\\text{Loss}_{\\text{L1}} = \\text{Loss}_{\\text{original}} + \\lambda \\sum_{i=1}^{n} \\vert{}w_i\\vert{}" style="font-family: &quot;Google Sans Text&quot;, sans-serif !important; line-height: 1.15 !important; margin-top: 0px !important;">$$\\text{Loss}_{\\text{L1}} = \\text{Loss}_{\\text{original}} + \\lambda \\sum_{i=1}^{n} \\vert{}w_i\\vert{}$$</div></body></html>';
+    const cleanMath = cleanHtmlMathToMathML(inputHtml);
+    expect(cleanMath).toContain('<mtext>Loss</mtext>');
+    expect(cleanMath).toContain('<mtext>L1</mtext>');
+    expect(cleanMath).not.toContain('<mi>L</mi><mi>o</mi><mi>s</mi><mi>s</mi>');
+
     const res = convertHtml(inputHtml);
     expect(res.html).toContain('<mtext>Loss</mtext>');
-    expect(res.html).toContain('<mtext>L1</mtext>');
     expect(res.html).not.toContain('<mi>L</mi><mi>o</mi><mi>s</mi><mi>s</mi>');
+  });
+
+  it('handles full HTML document string with non-breaking spaces and zero-width spaces', () => {
+    const inputHtml =
+      '<meta charset=\'utf-8\'><html><head></head><body><div class="math-block" data-math="\\text{\u00a0Loss\u200b}_{\\text{L1}} = \\text{Loss}" style="font-family: &quot;Google Sans&quot;;">$$\\text{Loss}$$</div></body></html>';
+    const cleanMath = cleanHtmlMathToMathML(inputHtml);
+    expect(cleanMath).toContain('<mtext>Loss</mtext>');
   });
 
   it('handles data-math with html entities like &lt; &gt; &amp; &quot;', () => {
