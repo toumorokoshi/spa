@@ -648,6 +648,7 @@ export const postProcessMathML = (mathml: string): string => {
  * Converts a single LaTeX math expression into a MathML block using Temml.
  */
 export const latexToMathML = (latex: string, displayMode = false): string => {
+  try {
     const cleanLatex = stripMathbfWrappers(normalizeInput(latex));
     const raw = temml.renderToString(cleanLatex, {
       displayMode,
