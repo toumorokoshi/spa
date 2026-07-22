@@ -11,9 +11,6 @@ order of operations.
 6. implement the change requested in the prompt.
 7. run linting and formatting before committing.
 8. Identify any remaining issues or features that need to be implemented 2. include them in GAPS.md
-9. commit and push the change.
-10. if you were not able to fully address the bd issue, mark it as "blocked".
-    This will ensure the next worker does not pick it up again until a human reviews.
 
 ## Branch cleanup
 
