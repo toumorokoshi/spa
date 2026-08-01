@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import preact from '@preact/preset-vite';
 import { resolve } from 'path';
 import { readdirSync, existsSync } from 'fs';
+import { repairLoneSurrogateEscapes } from './vite-plugins/repair-lone-surrogate-escapes';
 
 const discoverEntryPoints = (): Record<string, string> => {
   const srcDir = resolve(__dirname, 'src');
@@ -24,7 +25,7 @@ const discoverEntryPoints = (): Record<string, string> => {
 };
 
 export default defineConfig({
-  plugins: [preact()],
+  plugins: [preact(), repairLoneSurrogateEscapes()],
   base: '/spa/',
   optimizeDeps: {
     exclude: ['temml']
