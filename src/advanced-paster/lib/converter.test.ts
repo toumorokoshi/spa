@@ -511,6 +511,36 @@ Even more concisely, a vector space is a module over a field.[7]`;
     expect(result.html).toBe('<div>Hello <b>World</b></div>');
   });
 
+  it('converts a bare Wikipedia math image into MathML via its alt LaTeX', () => {
+    const img =
+      '<img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/d81b8c33cae834be9695eb83960081cb3ce0ffd7" aria-hidden="true" alt="{\\displaystyle {\\text{Speedup}}={\\frac {\\text{Execution time for the entire task without enhancements}}{\\text{Execution time for the same task when enhancements are applied}}}}">';
+    const result = convert({ plainText: img, htmlText: img }, 'auto');
+
+    expect(result.html).toContain('<mtext>Speedup</mtext>');
+    expect(result.html).toContain('<mfrac>');
+    expect(result.html).toContain('display="block"');
+    // The rendered SVG is dropped in favour of the math it stood in for.
+    expect(result.html).not.toContain('<img');
+    expect(result.html).not.toContain('wikimedia.org');
+
+    expect(result.markdown).not.toContain('![');
+    expect(result.markdown).toContain('Speedup');
+    expect(result.plaintext).toContain(
+      'Execution time for the entire task without enhancements'
+    );
+  });
+
+  it('leaves non-math images as images', () => {
+    const payload = {
+      plainText: '',
+      htmlText: '<p>See <img src="cat.jpg" alt="A cat sitting on a mat"></p>'
+    };
+    const result = convert(payload, 'auto');
+
+    expect(result.html).toContain('<img src="cat.jpg"');
+    expect(result.markdown).toContain('![A cat sitting on a mat](cat.jpg)');
+  });
+
   it('strips zero-width and formatting characters from LaTeX math commands in convertEmbeddedLatexToMathML', () => {
     // Inject zero-width spaces (\u200b and \u200c) inside LaTeX tokens
     const input =

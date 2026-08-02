@@ -6,7 +6,8 @@ import {
   latexToMathML,
   convertEmbeddedLatexToUnicode,
   convertEmbeddedLatexToMathML,
-  getLatexCommands,
+  hasLatexCommands,
+  hasLatexDelimiters,
   SUPERSCRIPTS,
   SUBSCRIPTS,
   unicodeToLetterMap,
@@ -14,6 +15,7 @@ import {
   unwrapStyleCommands,
   findMatchingBrace
 } from './latex';
+import { readMathFromHtml, transformMathElements } from './dom';
 
 export type InputFormat = 'auto' | 'html' | 'markdown' | 'latex';
 
@@ -41,41 +43,6 @@ import { gfm } from 'turndown-plugin-gfm';
 const turndownService = new TurndownService({ headingStyle: 'atx' });
 turndownService.use(gfm);
 
-const STRUCTURAL_MACROS = [
-  'frac',
-  'tfrac',
-  'dfrac',
-  'cfrac',
-  'textbf',
-  'textit',
-  'text',
-  'mathrm',
-  'mathbf',
-  'mathit',
-  'begin',
-  'end',
-  'mathbb',
-  'mathcal',
-  'boldsymbol',
-  'bold',
-  'mathsf',
-  'operatorname',
-  'widehat',
-  'vec',
-  'underbrace',
-  'stackrel',
-  'pmod',
-  'xrightarrow'
-];
-
-const getLatexIndicators = (): string[] => {
-  const dynamicCommands = getLatexCommands();
-  const allIndicators = new Set([...STRUCTURAL_MACROS, ...dynamicCommands]);
-  return Array.from(allIndicators);
-};
-
-const LATEX_INDICATORS = getLatexIndicators();
-
 export const isHtml = (str: string): boolean => {
   return /<[a-z/][\s\S]*>/i.test(str);
 };
@@ -98,13 +65,7 @@ export const detectFormatDetails = (
     };
   }
 
-  const hasLatexDelimiters = /\$\$|\\\[|\\\]|\\\(|\\\)/.test(payload.plainText);
-  const commandsPattern = new RegExp(
-    `\\\\(${LATEX_INDICATORS.join('|')})(?![a-zA-Z])`
-  );
-  const hasLatexCommands = commandsPattern.test(payload.plainText);
-
-  if (hasLatexDelimiters) {
+  if (hasLatexDelimiters(payload.plainText)) {
     return {
       format: 'latex',
       explanation:
@@ -112,7 +73,7 @@ export const detectFormatDetails = (
     };
   }
 
-  if (hasLatexCommands) {
+  if (hasLatexCommands(payload.plainText)) {
     return {
       format: 'latex',
       explanation: 'Detected LaTeX math macros/commands in plainText.'
@@ -430,9 +391,7 @@ const processDisplayStyleMath = (html: string, isUnicode: boolean): string => {
 
   for (const item of nonOverlapping) {
     const before = html.slice(lastIndex, item.index);
-    const extracted = item.isDelimiter
-      ? null
-      : extractLatexFromMathHtml(item.content);
+    const extracted = item.isDelimiter ? null : readMathFromHtml(item.content);
     // For delimiter matches, prefer the raw inner content to preserve whitespace for accurate annotation
     const mathExpr = item.isDelimiter
       ? item.inner
@@ -459,264 +418,26 @@ export const processDisplayStyleToUnicode = (html: string): string => {
   return processDisplayStyleMath(braceResolved, true);
 };
 
+// No brace-resolving counterpart to processStyleBracesToUnicode: on the MathML
+// side the {\displaystyle...} patterns are consumed by cleanHtmlMathToMathML,
+// which reads them off the DOM rather than out of the raw string.
 export const processDisplayStyleToMathML = (html: string): string =>
-  // Note: intentionally do NOT call processStyleBracesToMathML here.
-  // That function is for plain-text LaTeX only; calling it on HTML content would
-  // incorrectly parse HTML attribute values (e.g., alttext="{\displaystyle...}").
-  // The {\\displaystyle...} brace patterns in HTML are handled by cleanHtmlMathToMathML.
   processDisplayStyleMath(html, false);
 
-export const decodeHtmlEntities = (str: string): string => {
-  return (
-    str
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      // eslint-disable-next-line quotes
-      .replace(/&(?:#39|#x27|apos);/g, "'")
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&bsol;/g, '\\')
-      .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)))
-      .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
-        String.fromCharCode(parseInt(hex, 16))
-      )
+/**
+ * Replaces every math container in `html` -- MathML trees, `data-math`
+ * editor blocks, KaTeX spans and Wikipedia's rendered SVG `<img>` -- with
+ * Temml-rendered MathML. Locating and reading them is delegated to `./dom`,
+ * which uses the browser's parser rather than tag-matching by regex.
+ */
+export const cleanHtmlMathToMathML = (html: string): string =>
+  transformMathElements(html, ({ latex, isDisplay }) =>
+    latexToMathML(latex, isDisplay)
   );
-};
 
-const extractLatexFromMathHtml = (
-  mathHtml: string,
-  openTag = ''
-): { latex: string; isDisplay: boolean } | null => {
-  let rawText: string | null = null;
-
-  const dataMathMatch =
-    /data-(?:math|latex|tex)=(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(
-      openTag || mathHtml
-    );
-  if (dataMathMatch) {
-    rawText = dataMathMatch[1] ?? dataMathMatch[2] ?? dataMathMatch[3] ?? '';
-  }
-
-  if (!rawText) {
-    const annotationMatch =
-      /<annotation[^>]*encoding=["'](?:application\/x-tex|TeX)["'][^>]*>([\s\S]*?)<\/annotation>/i.exec(
-        mathHtml
-      );
-    if (annotationMatch) rawText = annotationMatch[1];
-  }
-
-  if (!rawText) {
-    const mathAttrMatch =
-      /<math[^>]*alttext=(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(mathHtml);
-    if (mathAttrMatch) {
-      rawText = mathAttrMatch[1] ?? mathAttrMatch[2] ?? mathAttrMatch[3] ?? '';
-    }
-  }
-
-  if (!rawText) {
-    const imgAttrMatch = /<img[^>]*alt=(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(
-      mathHtml
-    );
-    if (imgAttrMatch) {
-      rawText = imgAttrMatch[1] ?? imgAttrMatch[2] ?? imgAttrMatch[3] ?? '';
-    }
-  }
-
-  if (!rawText) {
-    const altMatch = /alt=(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(mathHtml);
-    if (altMatch) {
-      rawText = altMatch[1] ?? altMatch[2] ?? altMatch[3] ?? '';
-    }
-  }
-
-  if (!rawText) {
-    const delimitedMatch = /(\$\$|\\\[|\\\()([\s\S]*?)(\$\$|\\\]|\\\))/i.exec(
-      mathHtml
-    );
-    if (delimitedMatch) {
-      rawText = delimitedMatch[2];
-    }
-  }
-
-  if (rawText === null) return null;
-
-  const decoded = decodeHtmlEntities(rawText.trim());
-  const hasDisplayStyle = decoded.includes('\\displaystyle');
-  const isDisplay =
-    hasDisplayStyle ||
-    /<div\b/i.test(openTag) ||
-    /math-block|mwe-math-element-block/i.test(openTag) ||
-    /display=["']block["']/i.test(openTag) ||
-    /display=["']block["']/i.test(mathHtml) ||
-    /\$\$|\\\[/.test(mathHtml);
-
-  return {
-    latex: unwrapStyleCommands(decoded),
-    isDisplay
-  };
-};
-
-const findMatchingClosingTag = (
-  html: string,
-  startIndex: number,
-  tagName: string
-): number => {
-  const openTagRegex = new RegExp(
-    `<${tagName}(?:\\s+(?:[^\\s>="']+(?:=(?:"[^"]*"|'[^']*'|[^\\s>]+))?))*\\s*>`,
-    'gi'
-  );
-  const closeTagRegex = new RegExp(`</${tagName}>`, 'gi');
-
-  let depth = 1;
-  let currIndex = startIndex;
-
-  while (depth > 0 && currIndex < html.length) {
-    openTagRegex.lastIndex = currIndex;
-    closeTagRegex.lastIndex = currIndex;
-
-    const nextOpen = openTagRegex.exec(html);
-    const nextClose = closeTagRegex.exec(html);
-
-    if (!nextClose) return -1;
-
-    if (nextOpen && nextOpen.index < nextClose.index) {
-      depth++;
-      currIndex = nextOpen.index + nextOpen[0].length;
-    } else {
-      depth--;
-      if (depth === 0) return nextClose.index + nextClose[0].length;
-      currIndex = nextClose.index + nextClose[0].length;
-    }
-  }
-
-  return -1;
-};
-
-const isMathContainerOpenTag = (openTag: string): boolean => {
-  return (
-    /<(math|mwe-math-element)\b/i.test(openTag) ||
-    /data-(?:math|latex|tex)=/i.test(openTag) ||
-    /class=["'][^"']*?\b(?:math-block|math-inline|katex|mwe-math-element)\b[^"']*?["']/i.test(
-      openTag
-    )
-  );
-};
-
-const replaceHtmlContainers = (
-  html: string,
-  convertMathFn: (latex: string, isDisplay: boolean) => string
-): string => {
-  const containerPattern =
-    /<(div|span|math|mwe-math-element)(?:\s+(?:[^\s>="']+(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?))*\s*>/gi;
-
-  let result = '';
-  let lastIndex = 0;
-  let match;
-
-  while ((match = containerPattern.exec(html)) !== null) {
-    const openTag = match[0];
-    if (!isMathContainerOpenTag(openTag)) continue;
-
-    const tagName = match[1];
-    const startIndex = match.index;
-    const openTagLength = match[0].length;
-
-    const endIndex = findMatchingClosingTag(
-      html,
-      startIndex + openTagLength,
-      tagName
-    );
-
-    if (endIndex === -1) continue;
-
-    const fullContainerHtml = html.slice(startIndex, endIndex);
-    const extracted = extractLatexFromMathHtml(fullContainerHtml, openTag);
-
-    if (extracted) {
-      result += html.slice(lastIndex, startIndex);
-      result += convertMathFn(extracted.latex, extracted.isDisplay);
-      lastIndex = endIndex;
-      containerPattern.lastIndex = endIndex;
-    }
-  }
-
-  result += html.slice(lastIndex);
-  return result;
-};
-
-const replaceMathTags = (
-  html: string,
-  replaceFn: (innerContent: string, openTag: string) => string
-): string => {
-  const startPattern = /<math[^>]*>/i;
-  const match = startPattern.exec(html);
-  if (!match) {
-    return html;
-  }
-  const startIdx = match.index;
-  const openTag = match[0];
-
-  if (
-    openTag.includes('data-processed="true"') ||
-    /class="[^"]*tml-(?:display|inline)/.test(openTag) ||
-    openTag.includes('style="display:block math;') ||
-    openTag.includes('style="display:inline math;')
-  ) {
-    const endTag = '</math>';
-    const endIdx = html.indexOf(endTag, startIdx + openTag.length);
-    if (endIdx >= 0) {
-      const before = html.slice(0, startIdx + openTag.length);
-      const after = html.slice(startIdx + openTag.length);
-      return before + replaceMathTags(after, replaceFn);
-    }
-  }
-
-  const endTag = '</math>';
-  const endIdx = html.indexOf(endTag, startIdx + openTag.length);
-  if (endIdx >= 0) {
-    const before = html.slice(0, startIdx);
-    const innerContent = html.slice(startIdx + openTag.length, endIdx);
-    const after = html.slice(endIdx + endTag.length);
-    const replacement = replaceFn(innerContent, openTag).replace(
-      /<math/i,
-      '<math data-processed="true"'
-    );
-    return before + replacement + replaceMathTags(after, replaceFn);
-  }
-  const before = html.slice(0, startIdx + openTag.length);
-  const after = html.slice(startIdx + openTag.length);
-  return before + replaceMathTags(after, replaceFn);
-};
-
-export const cleanHtmlMathToMathML = (html: string): string => {
-  const processed = replaceHtmlContainers(html, (latex, isDisplay) =>
-    latexToMathML(latex, isDisplay).replace(
-      /<math/i,
-      '<math data-processed="true"'
-    )
-  );
-  const result = replaceMathTags(processed, (inner, openTag) => {
-    const extracted = extractLatexFromMathHtml(inner, openTag);
-    if (extracted) {
-      return latexToMathML(extracted.latex, extracted.isDisplay);
-    }
-    return inner;
-  });
-  return result.replace(/\s*data-processed="true"/g, '');
-};
-
-export const cleanHtmlMathToUnicode = (html: string): string => {
-  const processed = replaceHtmlContainers(html, (latex) => latexToText(latex));
-  const result = replaceMathTags(processed, (inner, openTag) => {
-    const extracted = extractLatexFromMathHtml(inner, openTag);
-    if (extracted) {
-      return latexToText(extracted.latex);
-    }
-    return inner.replace(/<[^>]*>?/gm, '');
-  });
-  return result;
-};
+/** As `cleanHtmlMathToMathML`, but rendering to best-effort Unicode text. */
+export const cleanHtmlMathToUnicode = (html: string): string =>
+  transformMathElements(html, ({ latex }) => latexToText(latex));
 
 export const convertHtml = (rawInput: string): ConvertedOutputs => {
   const steps: Array<{ stepName: string; output: string }> = [];
@@ -726,38 +447,42 @@ export const convertHtml = (rawInput: string): ConvertedOutputs => {
   const normalized = normalizeInput(rawInput);
   steps.push({ stepName: '2. Normalize Input', output: normalized });
 
-  const htmlWithMath = processDisplayStyleToMathML(normalized);
+  // Math elements are extracted structurally, via the DOM, before any
+  // text-level pass runs. The text passes match `{\displaystyle ...}` and math
+  // delimiters anywhere in the string, including inside attribute values, so
+  // they would otherwise corrupt the very `alt`/`alttext` sources the math has
+  // to be read from.
+  const cleanedHtmlForHtml = cleanHtmlMathToMathML(normalized);
   steps.push({
-    stepName: '3. Pre-process Display Style MathML',
-    output: htmlWithMath
-  });
-
-  const cleanedHtmlForHtml = cleanHtmlMathToMathML(htmlWithMath);
-  steps.push({
-    stepName: '4. Clean Html Math Containers to MathML',
+    stepName: '3. Extract Html Math Elements to MathML',
     output: cleanedHtmlForHtml
   });
 
-  const processedHtmlForHtml = convertEmbeddedLatexToMathML(cleanedHtmlForHtml);
+  const htmlWithMath = processDisplayStyleToMathML(cleanedHtmlForHtml);
+  steps.push({
+    stepName: '4. Pre-process Display Style MathML',
+    output: htmlWithMath
+  });
+
+  const processedHtmlForHtml = convertEmbeddedLatexToMathML(htmlWithMath);
   steps.push({
     stepName: '5. Convert Embedded Latex to MathML',
     output: processedHtmlForHtml
   });
 
-  const htmlWithMathText = processDisplayStyleToUnicode(normalized);
+  const cleanedHtmlForText = cleanHtmlMathToUnicode(normalized);
   steps.push({
-    stepName: '6. Pre-process Display Style Unicode',
-    output: htmlWithMathText
-  });
-
-  const cleanedHtmlForText = cleanHtmlMathToUnicode(htmlWithMathText);
-  steps.push({
-    stepName: '7. Clean Html Math Containers to Unicode',
+    stepName: '6. Extract Html Math Elements to Unicode',
     output: cleanedHtmlForText
   });
 
-  const processedHtmlForText =
-    convertEmbeddedLatexToUnicode(cleanedHtmlForText);
+  const htmlWithMathText = processDisplayStyleToUnicode(cleanedHtmlForText);
+  steps.push({
+    stepName: '7. Pre-process Display Style Unicode',
+    output: htmlWithMathText
+  });
+
+  const processedHtmlForText = convertEmbeddedLatexToUnicode(htmlWithMathText);
   steps.push({
     stepName: '8. Convert Embedded Latex to Unicode',
     output: processedHtmlForText

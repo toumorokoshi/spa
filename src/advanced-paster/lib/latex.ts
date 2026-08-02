@@ -355,6 +355,66 @@ export const getLatexCommands = (): string[] =>
     return commandOnly.trim();
   });
 
+/**
+ * Macros that structure an expression rather than stand in for a symbol, so
+ * they never appear in `LATEX_TO_UNICODE` yet still mark a string as LaTeX.
+ */
+export const STRUCTURAL_MACROS = [
+  'frac',
+  'tfrac',
+  'dfrac',
+  'cfrac',
+  'textbf',
+  'textit',
+  'text',
+  'mathrm',
+  'mathbf',
+  'mathit',
+  'begin',
+  'end',
+  'mathbb',
+  'mathcal',
+  'boldsymbol',
+  'bold',
+  'mathsf',
+  'operatorname',
+  'widehat',
+  'vec',
+  'underbrace',
+  'stackrel',
+  'pmod',
+  'xrightarrow'
+];
+
+const LATEX_INDICATORS = Array.from(
+  new Set([...STRUCTURAL_MACROS, ...getLatexCommands()])
+);
+
+// Deliberately non-global: a `g` flag would carry `lastIndex` between calls.
+const LATEX_COMMAND_PATTERN = new RegExp(
+  `\\\\(${LATEX_INDICATORS.join('|')})(?![a-zA-Z])`
+);
+const LATEX_DELIMITER_PATTERN = /\$\$|\\\[|\\\]|\\\(|\\\)/;
+const LATEX_STYLE_BRACE_PATTERN =
+  /\{\s*\\(?:display|text|script|scriptscript)style/i;
+
+/** True when `text` contains math delimiters (`$$`, `\[`, `\]`, `\(`, `\)`). */
+export const hasLatexDelimiters = (text: string): boolean =>
+  LATEX_DELIMITER_PATTERN.test(text);
+
+/** True when `text` contains a known LaTeX macro or structural command. */
+export const hasLatexCommands = (text: string): boolean =>
+  LATEX_COMMAND_PATTERN.test(text);
+
+/**
+ * True when `text` reads as LaTeX rather than prose. Used to decide whether an
+ * otherwise-unmarked attribute (such as an `<img alt>`) holds a math source.
+ */
+export const isLatexLike = (text: string): boolean =>
+  LATEX_STYLE_BRACE_PATTERN.test(text) ||
+  hasLatexDelimiters(text) ||
+  hasLatexCommands(text);
+
 export const SUPERSCRIPTS: Record<string, string> = {
   '0': '⁰',
   '1': '¹',
