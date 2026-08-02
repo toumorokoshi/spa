@@ -648,6 +648,15 @@ export const App = () => {
             selectedFormat={formatOverride}
           />
 
+          <OutputGrid
+            plainText={payload.plainText}
+            html={outputs.html}
+            markdown={outputs.markdown}
+            plaintext={outputs.plaintext}
+            copyPlainText={copyPlainText}
+            copyRichText={copyRichText}
+          />
+
           <RawInputsRow payload={payload} copyPlainText={copyPlainText} />
 
           <DebugPipeline debugSteps={outputs.debugSteps} />
@@ -655,15 +664,6 @@ export const App = () => {
           <CharInspector payload={payload} />
         </>
       )}
-
-      <OutputGrid
-        plainText={payload.plainText}
-        html={outputs.html}
-        markdown={outputs.markdown}
-        plaintext={outputs.plaintext}
-        copyPlainText={copyPlainText}
-        copyRichText={copyRichText}
-      />
     </div>
   );
 };
