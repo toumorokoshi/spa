@@ -22,6 +22,7 @@
   "homepage": "https://toumorokoshi.github.io/spa/",
   "dependencies": {
     "marked": "^18.0.3",
+    "mermaid": "^11.17.2",
     "preact": "^10.25.4",
     "temml": "^0.13.3",
     "turndown": "^7.2.4",
