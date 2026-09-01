@@ -39,12 +39,20 @@ export const isDiagramLook = (value: string): value is DiagramLook => {
 };
 
 const getDarkEdgeLabelCss = (): string => `
-  .edgeLabel {
+  .edgeLabel,
+  .edgeLabel .label,
+  .edgeLabel foreignObject,
+  .edgeLabel div,
+  .edgeLabel p {
     background-color: transparent !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
-  .edgeLabel span,
-  .edgeLabel p,
-  .edgeLabel .label {
+  .edgeLabel span.edgeLabel,
+  .edgeLabel span {
     background-color: #1e293b !important;
     color: #f8fafc !important;
     border: 1px solid #475569 !important;
@@ -54,6 +62,7 @@ const getDarkEdgeLabelCss = (): string => `
     font-weight: 500 !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
     display: inline-block !important;
+    line-height: 1.2 !important;
   }
   .edgeLabel rect,
   .labelBkg {
@@ -66,12 +75,20 @@ const getDarkEdgeLabelCss = (): string => `
 `;
 
 const getLightEdgeLabelCss = (): string => `
-  .edgeLabel {
+  .edgeLabel,
+  .edgeLabel .label,
+  .edgeLabel foreignObject,
+  .edgeLabel div,
+  .edgeLabel p {
     background-color: transparent !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
-  .edgeLabel span,
-  .edgeLabel p,
-  .edgeLabel .label {
+  .edgeLabel span.edgeLabel,
+  .edgeLabel span {
     background-color: #ffffff !important;
     color: #1e293b !important;
     border: 1px solid #cbd5e1 !important;
@@ -81,6 +98,7 @@ const getLightEdgeLabelCss = (): string => `
     font-weight: 500 !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
     display: inline-block !important;
+    line-height: 1.2 !important;
   }
   .edgeLabel rect,
   .labelBkg {
@@ -123,6 +141,9 @@ const getRoundedConfig = (theme: MermaidTheme): MermaidConfig => ({
   securityLevel: 'loose',
   fontFamily:
     'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  themeVariables: {
+    edgeLabelBackground: 'transparent'
+  },
   themeCSS: getRoundedThemeCss(theme),
   flowchart: {
     curve: 'basis',
@@ -137,6 +158,9 @@ const getHandDrawnConfig = (theme: MermaidTheme): MermaidConfig => ({
   securityLevel: 'loose',
   fontFamily:
     'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  themeVariables: {
+    edgeLabelBackground: 'transparent'
+  },
   themeCSS: getEdgeLabelCss(theme),
   flowchart: {
     curve: 'basis',
@@ -149,6 +173,9 @@ const getClassicConfig = (theme: MermaidTheme): MermaidConfig => ({
   theme,
   look: 'classic',
   securityLevel: 'loose',
+  themeVariables: {
+    edgeLabelBackground: 'transparent'
+  },
   themeCSS: getEdgeLabelCss(theme),
   flowchart: {
     curve: 'linear',

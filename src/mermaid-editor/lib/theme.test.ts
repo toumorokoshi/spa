@@ -9,7 +9,7 @@ import {
   getMermaidConfig
 } from './theme';
 
-describe('theme and look', () => {
+describe('theme and look definitions', () => {
   it('contains expected themes and looks', () => {
     expect(MERMAID_THEMES.length).toBeGreaterThan(0);
     expect(LOOK_OPTIONS.length).toBeGreaterThan(0);
@@ -27,24 +27,28 @@ describe('theme and look', () => {
     expect(isDiagramLook('classic')).toBe(true);
     expect(isDiagramLook('invalid-look')).toBe(false);
   });
+});
 
-  it('builds proper MermaidConfig with edge label boundary styling for each look', () => {
+describe('MermaidConfig builder', () => {
+  it('builds rounded look configuration with transparent edge background', () => {
     const roundedCfg = getMermaidConfig('neutral', 'rounded');
     expect(roundedCfg.theme).toBe('neutral');
+    expect(roundedCfg.themeVariables?.edgeLabelBackground).toBe('transparent');
     expect(roundedCfg.themeCSS).toContain('rx: 8px');
     expect(roundedCfg.themeCSS).toContain('.edgeLabel');
     expect(roundedCfg.themeCSS).toContain('border-radius: 9999px');
     expect(roundedCfg.flowchart?.curve).toBe('basis');
+  });
 
+  it('builds handDrawn and classic look configurations', () => {
     const handDrawnCfg = getMermaidConfig('dark', 'handDrawn');
     expect(handDrawnCfg.look).toBe('handDrawn');
     expect(handDrawnCfg.theme).toBe('dark');
-    expect(handDrawnCfg.themeCSS).toContain('.edgeLabel');
     expect(handDrawnCfg.themeCSS).toContain('#1e293b');
 
     const classicCfg = getMermaidConfig('default', 'classic');
     expect(classicCfg.look).toBe('classic');
-    expect(classicCfg.themeCSS).toContain('.edgeLabel');
+    expect(classicCfg.themeVariables?.edgeLabelBackground).toBe('transparent');
     expect(classicCfg.flowchart?.curve).toBe('linear');
   });
 });
