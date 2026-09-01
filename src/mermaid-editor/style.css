@@ -214,6 +214,13 @@ body {
   color: var(--text-primary);
 }
 
+.style-selectors-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .theme-selector-wrap {
   display: inline-flex;
   align-items: center;

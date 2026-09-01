@@ -9,6 +9,8 @@ export const App = (): JSX.Element => {
     setCode,
     theme,
     setTheme,
+    look,
+    setLook,
     isCollapsed,
     toggleCollapse,
     renderResult,
@@ -35,6 +37,8 @@ export const App = (): JSX.Element => {
         renderResult={renderResult}
         theme={theme}
         onThemeChange={setTheme}
+        look={look}
+        onLookChange={setLook}
         onCopyPng={copyPngAction}
         onCopySvg={copySvgAction}
         onCopyMarkdown={copyMarkdownAction}

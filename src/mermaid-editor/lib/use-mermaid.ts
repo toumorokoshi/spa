@@ -2,7 +2,12 @@ import { useState, useEffect, useCallback } from 'preact/hooks';
 import { DEFAULT_DIAGRAM_CODE, getPresetById } from './presets';
 import { renderMermaid, RenderResult } from './renderer';
 import { copyPng, copySvg, copyMarkdown, copyText } from './clipboard';
-import { MermaidTheme, DEFAULT_THEME } from './theme';
+import {
+  MermaidTheme,
+  DiagramLook,
+  DEFAULT_THEME,
+  DEFAULT_LOOK
+} from './theme';
 
 const TOAST_DURATION_MS = 2000;
 
@@ -55,6 +60,8 @@ export interface MermaidEditorState extends ClipboardActions {
   readonly setCode: (code: string) => void;
   readonly theme: MermaidTheme;
   readonly setTheme: (theme: MermaidTheme) => void;
+  readonly look: DiagramLook;
+  readonly setLook: (look: DiagramLook) => void;
   readonly isCollapsed: boolean;
   readonly toggleCollapse: () => void;
   readonly renderResult: RenderResult;
@@ -66,6 +73,7 @@ export interface MermaidEditorState extends ClipboardActions {
 export const useMermaidEditor = (): MermaidEditorState => {
   const [code, setCode] = useState<string>(DEFAULT_DIAGRAM_CODE);
   const [theme, setTheme] = useState<MermaidTheme>(DEFAULT_THEME);
+  const [look, setLook] = useState<DiagramLook>(DEFAULT_LOOK);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [renderResult, setRenderResult] = useState<RenderResult>({
     ok: true,
@@ -82,7 +90,7 @@ export const useMermaidEditor = (): MermaidEditorState => {
 
   useEffect(() => {
     const active = { current: true };
-    renderMermaid(code, theme).then((result) => {
+    renderMermaid(code, { theme, look }).then((result) => {
       if (active.current) {
         setRenderResult(result);
       }
@@ -90,7 +98,7 @@ export const useMermaidEditor = (): MermaidEditorState => {
     return () => {
       active.current = false;
     };
-  }, [code, theme]);
+  }, [code, theme, look]);
 
   const toggleCollapse = useCallback(() => setIsCollapsed((prev) => !prev), []);
   const clearCode = useCallback(() => setCode(''), []);
@@ -106,6 +114,8 @@ export const useMermaidEditor = (): MermaidEditorState => {
     setCode,
     theme,
     setTheme,
+    look,
+    setLook,
     isCollapsed,
     toggleCollapse,
     renderResult,

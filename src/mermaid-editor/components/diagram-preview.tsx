@@ -1,11 +1,20 @@
 import { JSX } from 'preact';
 import { RenderResult } from '../lib/renderer';
-import { MermaidTheme, MERMAID_THEMES, isMermaidTheme } from '../lib/theme';
+import {
+  MermaidTheme,
+  DiagramLook,
+  MERMAID_THEMES,
+  LOOK_OPTIONS,
+  isMermaidTheme,
+  isDiagramLook
+} from '../lib/theme';
 
 export interface DiagramPreviewProps {
   readonly renderResult: RenderResult;
   readonly theme: MermaidTheme;
   readonly onThemeChange: (theme: MermaidTheme) => void;
+  readonly look: DiagramLook;
+  readonly onLookChange: (look: DiagramLook) => void;
   readonly onCopyPng: () => void;
   readonly onCopySvg: () => void;
   readonly onCopyMarkdown: () => void;
@@ -14,15 +23,26 @@ export interface DiagramPreviewProps {
   readonly hasContent: boolean;
 }
 
-interface ThemeSelectorProps {
+interface StyleSelectorsProps {
   readonly theme: MermaidTheme;
   readonly onThemeChange: (theme: MermaidTheme) => void;
+  readonly look: DiagramLook;
+  readonly onLookChange: (look: DiagramLook) => void;
 }
 
-const ThemeSelector = ({
+const StyleSelectors = ({
   theme,
-  onThemeChange
-}: ThemeSelectorProps): JSX.Element => {
+  onThemeChange,
+  look,
+  onLookChange
+}: StyleSelectorsProps): JSX.Element => {
+  const handleLookSelect = (e: JSX.TargetedEvent<HTMLSelectElement>): void => {
+    const val = e.currentTarget.value;
+    if (isDiagramLook(val)) {
+      onLookChange(val);
+    }
+  };
+
   const handleThemeSelect = (e: JSX.TargetedEvent<HTMLSelectElement>): void => {
     const val = e.currentTarget.value;
     if (isMermaidTheme(val)) {
@@ -31,23 +51,43 @@ const ThemeSelector = ({
   };
 
   return (
-    <div className="theme-selector-wrap">
-      <label htmlFor="theme-select" className="theme-label">
-        Theme:
-      </label>
-      <select
-        id="theme-select"
-        className="theme-select"
-        value={theme}
-        onChange={handleThemeSelect}
-        aria-label="Choose a diagram theme"
-      >
-        {MERMAID_THEMES.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.label}
-          </option>
-        ))}
-      </select>
+    <div className="style-selectors-group">
+      <div className="theme-selector-wrap">
+        <label htmlFor="look-select" className="theme-label">
+          Style:
+        </label>
+        <select
+          id="look-select"
+          className="theme-select"
+          value={look}
+          onChange={handleLookSelect}
+          aria-label="Choose a diagram style"
+        >
+          {LOOK_OPTIONS.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="theme-selector-wrap">
+        <label htmlFor="theme-select" className="theme-label">
+          Theme:
+        </label>
+        <select
+          id="theme-select"
+          className="theme-select"
+          value={theme}
+          onChange={handleThemeSelect}
+          aria-label="Choose a diagram theme"
+        >
+          {MERMAID_THEMES.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 };
@@ -109,9 +149,7 @@ const PreviewActions = ({
   </div>
 );
 
-interface PreviewHeaderProps {
-  readonly theme: MermaidTheme;
-  readonly onThemeChange: (theme: MermaidTheme) => void;
+interface PreviewHeaderProps extends StyleSelectorsProps {
   readonly onCopyPng: () => void;
   readonly onCopySvg: () => void;
   readonly onCopyMarkdown: () => void;
@@ -124,6 +162,8 @@ interface PreviewHeaderProps {
 const PreviewHeader = ({
   theme,
   onThemeChange,
+  look,
+  onLookChange,
   onCopyPng,
   onCopySvg,
   onCopyMarkdown,
@@ -135,7 +175,12 @@ const PreviewHeader = ({
   <header className="preview-header">
     <div className="preview-title-row">
       <h2 className="preview-title">Preview</h2>
-      <ThemeSelector theme={theme} onThemeChange={onThemeChange} />
+      <StyleSelectors
+        theme={theme}
+        onThemeChange={onThemeChange}
+        look={look}
+        onLookChange={onLookChange}
+      />
       {copiedLabel && (
         <span className="copy-toast" role="status" aria-live="polite">
           ✓ {copiedLabel}
@@ -196,6 +241,8 @@ export const DiagramPreview = ({
   renderResult,
   theme,
   onThemeChange,
+  look,
+  onLookChange,
   onCopyPng,
   onCopySvg,
   onCopyMarkdown,
@@ -210,6 +257,8 @@ export const DiagramPreview = ({
       <PreviewHeader
         theme={theme}
         onThemeChange={onThemeChange}
+        look={look}
+        onLookChange={onLookChange}
         onCopyPng={onCopyPng}
         onCopySvg={onCopySvg}
         onCopyMarkdown={onCopyMarkdown}

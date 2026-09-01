@@ -35,6 +35,7 @@ describe('Mermaid Editor App - Controls and Initial Render', () => {
     expect(getByRole('button', { name: /copy markdown/i })).toBeTruthy();
     expect(getByRole('button', { name: /copy code/i })).toBeTruthy();
     expect(getByLabelText('Choose a diagram theme')).toBeTruthy();
+    expect(getByLabelText('Choose a diagram style')).toBeTruthy();
 
     await waitFor(() => {
       expect(document.querySelector('.svg-viewport')).toBeTruthy();
@@ -57,7 +58,7 @@ describe('Mermaid Editor App - Controls and Initial Render', () => {
   });
 });
 
-describe('Mermaid Editor App - Actions and Theme Switching', () => {
+describe('Mermaid Editor App - Actions and Presets', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(mermaid, 'render').mockImplementation(async (_id, code) => {
@@ -95,6 +96,21 @@ describe('Mermaid Editor App - Actions and Theme Switching', () => {
     fireEvent.change(select, { target: { value: 'sequence' } });
     expect(textarea.value).toContain('sequenceDiagram');
   });
+});
+
+describe('Mermaid Editor App - Themes, Styles, and Errors', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.spyOn(mermaid, 'render').mockImplementation(async (_id, code) => {
+      if (code.includes('invalid')) {
+        throw new Error('Lexical error on line 2');
+      }
+      return {
+        svg: '<svg id="diagram"><g><text>Flowchart</text></g></svg>',
+        bindFunctions: undefined
+      };
+    });
+  });
 
   it('changes diagram theme when selected', async () => {
     const initSpy = vi.spyOn(mermaid, 'initialize');
@@ -109,6 +125,23 @@ describe('Mermaid Editor App - Actions and Theme Switching', () => {
     await waitFor(() => {
       expect(initSpy).toHaveBeenCalledWith(
         expect.objectContaining({ theme: 'dark' })
+      );
+    });
+  });
+
+  it('changes diagram style look when selected', async () => {
+    const initSpy = vi.spyOn(mermaid, 'initialize');
+    const { getByLabelText } = render(<App />);
+    const lookSelect = getByLabelText(
+      'Choose a diagram style'
+    ) as HTMLSelectElement;
+
+    fireEvent.change(lookSelect, { target: { value: 'handDrawn' } });
+    expect(lookSelect.value).toBe('handDrawn');
+
+    await waitFor(() => {
+      expect(initSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ look: 'handDrawn' })
       );
     });
   });
