@@ -2,7 +2,8 @@
 
 ## Behavior
 
-- **Initial State**: On load, displays a default flowchart diagram in the editor and renders the corresponding SVG diagram in the preview pane.
+- **Initial State**: On load, displays a default flowchart diagram in the editor and renders the corresponding SVG diagram using the `Neutral` theme in the preview pane.
+- **Theme Selection**: Supports dynamically choosing between `Neutral`, `Default`, `Dark`, `Forest`, and `Base` themes. Changing the theme instantly re-renders the active diagram. Dark theme applies a high-contrast container background.
 - **Collapsible Sidebar**: An interactive collapse toggle allows minimizing the left editor pane to 48px width, granting full viewport real-estate to the preview panel.
 - **Presets**: Selecting a preset replaces the current editor text with the selected template code.
 - **Live Rendering**: Edits to the text field automatically trigger re-rendering of the SVG output via Mermaid.
@@ -18,4 +19,4 @@
 
 - Built using **Preact** + **TypeScript** + **Mermaid**.
 - All dependencies run entirely offline/client-side and are bundled into the static site via Vite.
-- Pure functions in `src/mermaid-editor/lib/` isolate rendering and clipboard logic.
+- Pure functions in `src/mermaid-editor/lib/` isolate rendering, themes, and clipboard logic.

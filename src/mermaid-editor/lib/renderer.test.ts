@@ -18,14 +18,20 @@ describe('renderer', () => {
     expect(id1).not.toBe(id2);
   });
 
-  it('handles successful rendering from mermaid', async () => {
+  it('handles successful rendering with chosen theme', async () => {
+    const initSpy = vi.spyOn(mermaid, 'initialize');
     vi.spyOn(mermaid, 'render').mockResolvedValueOnce({
       svg: '<svg><text>Sample Diagram</text></svg>',
       bindFunctions: undefined
     });
 
-    const result = await renderMermaid('graph TD\nA-->B', 'test-id');
+    const result = await renderMermaid('graph TD\nA-->B', 'forest', 'test-id');
     expect(result.ok).toBe(true);
+    expect(initSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        theme: 'forest'
+      })
+    );
     if (result.ok) {
       expect(result.svg).toContain('Sample Diagram');
     }
@@ -36,7 +42,7 @@ describe('renderer', () => {
       new Error('Parse error on line 1: syntax error')
     );
 
-    const result = await renderMermaid('invalid code', 'test-id');
+    const result = await renderMermaid('invalid code', 'neutral', 'test-id');
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toContain('Parse error');

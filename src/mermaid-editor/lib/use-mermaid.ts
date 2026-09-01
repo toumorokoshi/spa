@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'preact/hooks';
 import { DEFAULT_DIAGRAM_CODE, getPresetById } from './presets';
 import { renderMermaid, RenderResult } from './renderer';
 import { copyPng, copySvg, copyMarkdown, copyText } from './clipboard';
+import { MermaidTheme, DEFAULT_THEME } from './theme';
 
 const TOAST_DURATION_MS = 2000;
 
@@ -52,6 +53,8 @@ const useClipboardActions = (
 export interface MermaidEditorState extends ClipboardActions {
   readonly code: string;
   readonly setCode: (code: string) => void;
+  readonly theme: MermaidTheme;
+  readonly setTheme: (theme: MermaidTheme) => void;
   readonly isCollapsed: boolean;
   readonly toggleCollapse: () => void;
   readonly renderResult: RenderResult;
@@ -62,6 +65,7 @@ export interface MermaidEditorState extends ClipboardActions {
 
 export const useMermaidEditor = (): MermaidEditorState => {
   const [code, setCode] = useState<string>(DEFAULT_DIAGRAM_CODE);
+  const [theme, setTheme] = useState<MermaidTheme>(DEFAULT_THEME);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [renderResult, setRenderResult] = useState<RenderResult>({
     ok: true,
@@ -78,7 +82,7 @@ export const useMermaidEditor = (): MermaidEditorState => {
 
   useEffect(() => {
     const active = { current: true };
-    renderMermaid(code).then((result) => {
+    renderMermaid(code, theme).then((result) => {
       if (active.current) {
         setRenderResult(result);
       }
@@ -86,7 +90,7 @@ export const useMermaidEditor = (): MermaidEditorState => {
     return () => {
       active.current = false;
     };
-  }, [code]);
+  }, [code, theme]);
 
   const toggleCollapse = useCallback(() => setIsCollapsed((prev) => !prev), []);
   const clearCode = useCallback(() => setCode(''), []);
@@ -100,6 +104,8 @@ export const useMermaidEditor = (): MermaidEditorState => {
   return {
     code,
     setCode,
+    theme,
+    setTheme,
     isCollapsed,
     toggleCollapse,
     renderResult,

@@ -1,4 +1,5 @@
 import mermaid from 'mermaid';
+import { MermaidTheme, DEFAULT_THEME } from './theme';
 
 export type RenderResult =
   | { readonly ok: true; readonly svg: string }
@@ -10,7 +11,7 @@ const SUBSTRING_END_INDEX = 9;
 
 mermaid.initialize({
   startOnLoad: false,
-  theme: 'default',
+  theme: DEFAULT_THEME,
   securityLevel: 'loose'
 });
 
@@ -37,6 +38,7 @@ const extractErrorMessage = (error: unknown): string => {
 
 export const renderMermaid = async (
   code: string,
+  theme: MermaidTheme = DEFAULT_THEME,
   id: string = generateRenderId()
 ): Promise<RenderResult> => {
   const trimmed = code.trim();
@@ -45,6 +47,11 @@ export const renderMermaid = async (
   }
 
   try {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme,
+      securityLevel: 'loose'
+    });
     const { svg } = await mermaid.render(id, trimmed);
     cleanDanglingMermaidElements(id);
     return { ok: true, svg };

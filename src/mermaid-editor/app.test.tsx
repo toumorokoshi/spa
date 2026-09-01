@@ -34,6 +34,7 @@ describe('Mermaid Editor App - Controls and Initial Render', () => {
     expect(getByRole('button', { name: /copy svg/i })).toBeTruthy();
     expect(getByRole('button', { name: /copy markdown/i })).toBeTruthy();
     expect(getByRole('button', { name: /copy code/i })).toBeTruthy();
+    expect(getByLabelText('Choose a diagram theme')).toBeTruthy();
 
     await waitFor(() => {
       expect(document.querySelector('.svg-viewport')).toBeTruthy();
@@ -56,7 +57,7 @@ describe('Mermaid Editor App - Controls and Initial Render', () => {
   });
 });
 
-describe('Mermaid Editor App - Actions and Error Handling', () => {
+describe('Mermaid Editor App - Actions and Theme Switching', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(mermaid, 'render').mockImplementation(async (_id, code) => {
@@ -93,6 +94,23 @@ describe('Mermaid Editor App - Actions and Error Handling', () => {
 
     fireEvent.change(select, { target: { value: 'sequence' } });
     expect(textarea.value).toContain('sequenceDiagram');
+  });
+
+  it('changes diagram theme when selected', async () => {
+    const initSpy = vi.spyOn(mermaid, 'initialize');
+    const { getByLabelText } = render(<App />);
+    const themeSelect = getByLabelText(
+      'Choose a diagram theme'
+    ) as HTMLSelectElement;
+
+    fireEvent.change(themeSelect, { target: { value: 'dark' } });
+    expect(themeSelect.value).toBe('dark');
+
+    await waitFor(() => {
+      expect(initSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ theme: 'dark' })
+      );
+    });
   });
 
   it('displays syntax error alert when mermaid fails to render', async () => {

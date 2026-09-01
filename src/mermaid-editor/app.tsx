@@ -7,6 +7,8 @@ export const App = (): JSX.Element => {
   const {
     code,
     setCode,
+    theme,
+    setTheme,
     isCollapsed,
     toggleCollapse,
     renderResult,
@@ -31,6 +33,8 @@ export const App = (): JSX.Element => {
       />
       <DiagramPreview
         renderResult={renderResult}
+        theme={theme}
+        onThemeChange={setTheme}
         onCopyPng={copyPngAction}
         onCopySvg={copySvgAction}
         onCopyMarkdown={copyMarkdownAction}

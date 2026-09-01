@@ -1,8 +1,11 @@
 import { JSX } from 'preact';
 import { RenderResult } from '../lib/renderer';
+import { MermaidTheme, MERMAID_THEMES, isMermaidTheme } from '../lib/theme';
 
 export interface DiagramPreviewProps {
   readonly renderResult: RenderResult;
+  readonly theme: MermaidTheme;
+  readonly onThemeChange: (theme: MermaidTheme) => void;
   readonly onCopyPng: () => void;
   readonly onCopySvg: () => void;
   readonly onCopyMarkdown: () => void;
@@ -11,7 +14,104 @@ export interface DiagramPreviewProps {
   readonly hasContent: boolean;
 }
 
+interface ThemeSelectorProps {
+  readonly theme: MermaidTheme;
+  readonly onThemeChange: (theme: MermaidTheme) => void;
+}
+
+const ThemeSelector = ({
+  theme,
+  onThemeChange
+}: ThemeSelectorProps): JSX.Element => {
+  const handleThemeSelect = (e: JSX.TargetedEvent<HTMLSelectElement>): void => {
+    const val = e.currentTarget.value;
+    if (isMermaidTheme(val)) {
+      onThemeChange(val);
+    }
+  };
+
+  return (
+    <div className="theme-selector-wrap">
+      <label htmlFor="theme-select" className="theme-label">
+        Theme:
+      </label>
+      <select
+        id="theme-select"
+        className="theme-select"
+        value={theme}
+        onChange={handleThemeSelect}
+        aria-label="Choose a diagram theme"
+      >
+        {MERMAID_THEMES.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
+
+interface PreviewActionsProps {
+  readonly onCopyPng: () => void;
+  readonly onCopySvg: () => void;
+  readonly onCopyMarkdown: () => void;
+  readonly onCopyCode: () => void;
+  readonly isRenderSuccess: boolean;
+  readonly hasContent: boolean;
+}
+
+const PreviewActions = ({
+  onCopyPng,
+  onCopySvg,
+  onCopyMarkdown,
+  onCopyCode,
+  isRenderSuccess,
+  hasContent
+}: PreviewActionsProps): JSX.Element => (
+  <div className="preview-actions">
+    <button
+      type="button"
+      className="btn btn-primary"
+      onClick={onCopyPng}
+      disabled={!isRenderSuccess}
+      title="Copy as PNG Image"
+    >
+      Copy PNG
+    </button>
+    <button
+      type="button"
+      className="btn btn-secondary"
+      onClick={onCopySvg}
+      disabled={!isRenderSuccess}
+      title="Copy SVG"
+    >
+      Copy SVG
+    </button>
+    <button
+      type="button"
+      className="btn btn-secondary"
+      onClick={onCopyMarkdown}
+      disabled={!hasContent}
+      title="Copy as Markdown codeblock"
+    >
+      Copy Markdown
+    </button>
+    <button
+      type="button"
+      className="btn btn-secondary"
+      onClick={onCopyCode}
+      disabled={!hasContent}
+      title="Copy raw Mermaid code"
+    >
+      Copy Code
+    </button>
+  </div>
+);
+
 interface PreviewHeaderProps {
+  readonly theme: MermaidTheme;
+  readonly onThemeChange: (theme: MermaidTheme) => void;
   readonly onCopyPng: () => void;
   readonly onCopySvg: () => void;
   readonly onCopyMarkdown: () => void;
@@ -22,6 +122,8 @@ interface PreviewHeaderProps {
 }
 
 const PreviewHeader = ({
+  theme,
+  onThemeChange,
   onCopyPng,
   onCopySvg,
   onCopyMarkdown,
@@ -33,61 +135,34 @@ const PreviewHeader = ({
   <header className="preview-header">
     <div className="preview-title-row">
       <h2 className="preview-title">Preview</h2>
+      <ThemeSelector theme={theme} onThemeChange={onThemeChange} />
       {copiedLabel && (
         <span className="copy-toast" role="status" aria-live="polite">
           ✓ {copiedLabel}
         </span>
       )}
     </div>
-    <div className="preview-actions">
-      <button
-        type="button"
-        className="btn btn-primary"
-        onClick={onCopyPng}
-        disabled={!isRenderSuccess}
-        title="Copy as PNG Image"
-      >
-        Copy PNG
-      </button>
-      <button
-        type="button"
-        className="btn btn-secondary"
-        onClick={onCopySvg}
-        disabled={!isRenderSuccess}
-        title="Copy SVG"
-      >
-        Copy SVG
-      </button>
-      <button
-        type="button"
-        className="btn btn-secondary"
-        onClick={onCopyMarkdown}
-        disabled={!hasContent}
-        title="Copy as Markdown codeblock"
-      >
-        Copy Markdown
-      </button>
-      <button
-        type="button"
-        className="btn btn-secondary"
-        onClick={onCopyCode}
-        disabled={!hasContent}
-        title="Copy raw Mermaid code"
-      >
-        Copy Code
-      </button>
-    </div>
+    <PreviewActions
+      onCopyPng={onCopyPng}
+      onCopySvg={onCopySvg}
+      onCopyMarkdown={onCopyMarkdown}
+      onCopyCode={onCopyCode}
+      isRenderSuccess={isRenderSuccess}
+      hasContent={hasContent}
+    />
   </header>
 );
 
 interface PreviewContentProps {
   readonly renderResult: RenderResult;
   readonly isRenderSuccess: boolean;
+  readonly isDarkTheme: boolean;
 }
 
 const PreviewContent = ({
   renderResult,
-  isRenderSuccess
+  isRenderSuccess,
+  isDarkTheme
 }: PreviewContentProps): JSX.Element => {
   if (!renderResult.ok) {
     return (
@@ -99,9 +174,12 @@ const PreviewContent = ({
   }
 
   if (isRenderSuccess) {
+    const viewportClass = isDarkTheme
+      ? 'svg-viewport theme-dark'
+      : 'svg-viewport';
     return (
       <div
-        className="svg-viewport"
+        className={viewportClass}
         dangerouslySetInnerHTML={{ __html: renderResult.svg }}
       />
     );
@@ -116,6 +194,8 @@ const PreviewContent = ({
 
 export const DiagramPreview = ({
   renderResult,
+  theme,
+  onThemeChange,
   onCopyPng,
   onCopySvg,
   onCopyMarkdown,
@@ -128,6 +208,8 @@ export const DiagramPreview = ({
   return (
     <main className="preview-panel" aria-label="Mermaid Diagram Preview">
       <PreviewHeader
+        theme={theme}
+        onThemeChange={onThemeChange}
         onCopyPng={onCopyPng}
         onCopySvg={onCopySvg}
         onCopyMarkdown={onCopyMarkdown}
@@ -140,6 +222,7 @@ export const DiagramPreview = ({
         <PreviewContent
           renderResult={renderResult}
           isRenderSuccess={isRenderSuccess}
+          isDarkTheme={theme === 'dark'}
         />
       </div>
     </main>

@@ -214,6 +214,33 @@ body {
   color: var(--text-primary);
 }
 
+.theme-selector-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.theme-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.theme-select {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--bg-panel);
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+}
+
+.theme-select:focus {
+  border-color: var(--primary);
+}
+
 .copy-toast {
   font-size: 0.8rem;
   font-weight: 500;
@@ -306,6 +333,11 @@ body {
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.svg-viewport.theme-dark {
+  background: #1e293b;
+  border-color: #334155;
 }
 
 .svg-viewport svg {
