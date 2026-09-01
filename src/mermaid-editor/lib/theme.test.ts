@@ -28,18 +28,23 @@ describe('theme and look', () => {
     expect(isDiagramLook('invalid-look')).toBe(false);
   });
 
-  it('builds proper MermaidConfig for each look', () => {
+  it('builds proper MermaidConfig with edge label boundary styling for each look', () => {
     const roundedCfg = getMermaidConfig('neutral', 'rounded');
     expect(roundedCfg.theme).toBe('neutral');
     expect(roundedCfg.themeCSS).toContain('rx: 8px');
+    expect(roundedCfg.themeCSS).toContain('.edgeLabel');
+    expect(roundedCfg.themeCSS).toContain('border-radius: 9999px');
     expect(roundedCfg.flowchart?.curve).toBe('basis');
 
     const handDrawnCfg = getMermaidConfig('dark', 'handDrawn');
     expect(handDrawnCfg.look).toBe('handDrawn');
     expect(handDrawnCfg.theme).toBe('dark');
+    expect(handDrawnCfg.themeCSS).toContain('.edgeLabel');
+    expect(handDrawnCfg.themeCSS).toContain('#1e293b');
 
     const classicCfg = getMermaidConfig('default', 'classic');
     expect(classicCfg.look).toBe('classic');
+    expect(classicCfg.themeCSS).toContain('.edgeLabel');
     expect(classicCfg.flowchart?.curve).toBe('linear');
   });
 });

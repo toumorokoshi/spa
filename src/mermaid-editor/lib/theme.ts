@@ -38,7 +38,68 @@ export const isDiagramLook = (value: string): value is DiagramLook => {
   return LOOK_OPTIONS.some((look) => look.id === value);
 };
 
-const ROUNDED_CSS = `
+const getDarkEdgeLabelCss = (): string => `
+  .edgeLabel {
+    background-color: transparent !important;
+  }
+  .edgeLabel span,
+  .edgeLabel p,
+  .edgeLabel .label {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border: 1px solid #475569 !important;
+    border-radius: 9999px !important;
+    padding: 3px 10px !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+    display: inline-block !important;
+  }
+  .edgeLabel rect,
+  .labelBkg {
+    rx: 6px !important;
+    ry: 6px !important;
+    fill: #1e293b !important;
+    stroke: #475569 !important;
+    stroke-width: 1px !important;
+  }
+`;
+
+const getLightEdgeLabelCss = (): string => `
+  .edgeLabel {
+    background-color: transparent !important;
+  }
+  .edgeLabel span,
+  .edgeLabel p,
+  .edgeLabel .label {
+    background-color: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 9999px !important;
+    padding: 3px 10px !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+    display: inline-block !important;
+  }
+  .edgeLabel rect,
+  .labelBkg {
+    rx: 6px !important;
+    ry: 6px !important;
+    fill: #ffffff !important;
+    stroke: #cbd5e1 !important;
+    stroke-width: 1px !important;
+  }
+`;
+
+const getEdgeLabelCss = (theme: MermaidTheme): string => {
+  if (theme === 'dark') {
+    return getDarkEdgeLabelCss();
+  }
+  return getLightEdgeLabelCss();
+};
+
+const getRoundedThemeCss = (theme: MermaidTheme): string => `
   .node rect, .node circle, .node ellipse, .node polygon {
     rx: 8px !important;
     ry: 8px !important;
@@ -52,6 +113,7 @@ const ROUNDED_CSS = `
     ry: 10px !important;
     stroke-width: 1.5px !important;
   }
+  ${getEdgeLabelCss(theme)}
 `;
 
 const getRoundedConfig = (theme: MermaidTheme): MermaidConfig => ({
@@ -61,7 +123,7 @@ const getRoundedConfig = (theme: MermaidTheme): MermaidConfig => ({
   securityLevel: 'loose',
   fontFamily:
     'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  themeCSS: ROUNDED_CSS,
+  themeCSS: getRoundedThemeCss(theme),
   flowchart: {
     curve: 'basis',
     htmlLabels: true
@@ -75,6 +137,7 @@ const getHandDrawnConfig = (theme: MermaidTheme): MermaidConfig => ({
   securityLevel: 'loose',
   fontFamily:
     'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  themeCSS: getEdgeLabelCss(theme),
   flowchart: {
     curve: 'basis',
     htmlLabels: true
@@ -86,6 +149,7 @@ const getClassicConfig = (theme: MermaidTheme): MermaidConfig => ({
   theme,
   look: 'classic',
   securityLevel: 'loose',
+  themeCSS: getEdgeLabelCss(theme),
   flowchart: {
     curve: 'linear',
     htmlLabels: true
