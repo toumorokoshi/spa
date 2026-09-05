@@ -2,7 +2,7 @@
 
 ## Behavior
 
-- **Initial State**: On load, displays a default flowchart diagram in the editor and renders the corresponding SVG diagram using the `Neutral` theme in the preview pane.
+- **Initial State**: On load, displays a default flowchart diagram with YAML front matter configuration (`rankSpacing: 1` and `nodeSpacing: 1`) in the editor and renders the corresponding SVG diagram using the `Neutral` theme in the preview pane.
 - **Theme Selection**: Supports dynamically choosing between `Neutral`, `Default`, `Dark`, `Forest`, and `Base` themes. Changing the theme instantly re-renders the active diagram. Dark theme applies a high-contrast container background.
 - **Collapsible Sidebar**: An interactive collapse toggle allows minimizing the left editor pane to 48px width, granting full viewport real-estate to the preview panel.
 - **Presets**: Selecting a preset replaces the current editor text with the selected template code.

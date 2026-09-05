@@ -28,6 +28,8 @@ describe('Mermaid Editor App - Controls and Initial Render', () => {
     ) as HTMLTextAreaElement;
     expect(textarea).toBeTruthy();
     expect(textarea.value).toContain('graph TD');
+    expect(textarea.value).toContain('rankSpacing: 1');
+    expect(textarea.value).toContain('nodeSpacing: 1');
 
     expect(getByRole('button', { name: /collapse sidebar/i })).toBeTruthy();
     expect(getByRole('button', { name: /copy png/i })).toBeTruthy();

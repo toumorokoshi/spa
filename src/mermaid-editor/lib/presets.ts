@@ -8,7 +8,13 @@ export const DIAGRAM_PRESETS: readonly DiagramPreset[] = [
   {
     id: 'flowchart',
     name: 'Flowchart',
-    code: `graph TD
+    code: `---
+config:
+  flowchart:
+    rankSpacing: 1
+    nodeSpacing: 1
+---
+graph TD
     A[Start] --> B{Is it ready?}
     B -- Yes --> C[Deploy]
     B -- No --> D[Work on it]
