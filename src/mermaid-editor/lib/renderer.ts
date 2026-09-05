@@ -67,6 +67,37 @@ const resolveRenderOptions = (
   };
 };
 
+const removeEmptyEdgeLabels = (doc: Document): void => {
+  const edgeLabels = doc.querySelectorAll('.edgeLabel');
+  edgeLabels.forEach((el) => {
+    const text = el.textContent ?? '';
+    if (text.trim().length === 0) {
+      el.remove();
+    }
+  });
+};
+
+const serializeSvgDoc = (doc: Document, fallback: string): string => {
+  if (typeof XMLSerializer !== 'undefined') {
+    return new XMLSerializer().serializeToString(doc.documentElement);
+  }
+  return doc.documentElement ? doc.documentElement.outerHTML : fallback;
+};
+
+export const cleanRenderedSvg = (rawSvg: string): string => {
+  if (typeof DOMParser === 'undefined') {
+    return rawSvg;
+  }
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(rawSvg, 'image/svg+xml');
+  if (doc.querySelector('parsererror')) {
+    return rawSvg;
+  }
+
+  removeEmptyEdgeLabels(doc);
+  return serializeSvgDoc(doc, rawSvg);
+};
+
 export const renderMermaid = async (
   code: string,
   options?: RenderOptions
@@ -82,7 +113,7 @@ export const renderMermaid = async (
     mermaid.initialize(getMermaidConfig(theme, look));
     const { svg } = await mermaid.render(id, trimmed);
     cleanDanglingMermaidElements(id);
-    return { ok: true, svg };
+    return { ok: true, svg: cleanRenderedSvg(svg) };
   } catch (err) {
     cleanDanglingMermaidElements(id);
     return { ok: false, error: extractErrorMessage(err) };

@@ -9,6 +9,7 @@
 - **Auto-wrap Text**: An "Auto-wrap text" button directly below the preset dropdown traverses the rendered SVG nodes, measures label text dimensions against the configured or default wrapping width (`wrappingWidth`), and formats long node text in the editor source with quotes and `\n` line breaks. This forces Mermaid to compute multi-line node bounds prior to layout calculation, reflowing the diagram layout and preventing text clipping.
 - **Live Rendering**: Edits to the text field automatically trigger re-rendering of the SVG output via Mermaid.
 - **Error Handling**: When invalid Mermaid syntax is provided, the preview displays a formatted syntax error banner while preserving user input.
+- **Edge Label Styling & Clean Rendering**: Edge labels on connector lines render as rounded pill badges with single-layer border strokes, comfortable padding, and theme-adaptive background colors. For edges without label text, empty edge label placeholders are stripped from the rendered SVG and hidden in CSS so that no phantom boxes or artifacts appear at diagram coordinates.
 - **Export Options**:
   - **Copy PNG**: Converts SVG to 2x PNG canvas and copies an `image/png` blob to clipboard.
   - **Copy SVG**: Copies `image/svg+xml` and `text/plain` SVG markup to clipboard.
@@ -21,3 +22,4 @@
 - Built using **Preact** + **TypeScript** + **Mermaid**.
 - All dependencies run entirely offline/client-side and are bundled into the static site via Vite.
 - Pure functions in `src/mermaid-editor/lib/` isolate rendering, themes, and clipboard logic.
+- Post-processing in `src/mermaid-editor/lib/renderer.ts` removes empty edge label elements prior to export and display.

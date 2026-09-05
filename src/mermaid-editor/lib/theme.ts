@@ -43,7 +43,8 @@ const getDarkEdgeLabelCss = (): string => `
   .edgeLabel .label,
   .edgeLabel foreignObject,
   .edgeLabel div,
-  .edgeLabel p {
+  .edgeLabel p,
+  .labelBkg {
     background-color: transparent !important;
     background: transparent !important;
     border: none !important;
@@ -51,8 +52,23 @@ const getDarkEdgeLabelCss = (): string => `
     padding: 0 !important;
     margin: 0 !important;
   }
-  .edgeLabel span.edgeLabel,
-  .edgeLabel span {
+  .edgeLabel:empty,
+  .edgeLabel:not(:has(span:not(:empty))),
+  .edgeLabel span:empty,
+  .edgeLabel span.edgeLabel:empty {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .edgeLabel span.edgeLabel:not(:empty),
+  .edgeLabel span:not(:empty) {
     background-color: #1e293b !important;
     color: #f8fafc !important;
     border: 1px solid #475569 !important;
@@ -64,13 +80,16 @@ const getDarkEdgeLabelCss = (): string => `
     display: inline-block !important;
     line-height: 1.2 !important;
   }
-  .edgeLabel rect,
-  .labelBkg {
+  .edgeLabel rect[width]:not([width="0"]) {
     rx: 6px !important;
     ry: 6px !important;
     fill: #1e293b !important;
     stroke: #475569 !important;
     stroke-width: 1px !important;
+  }
+  .edgeLabel rect:not([width]),
+  .edgeLabel rect[width="0"] {
+    display: none !important;
   }
 `;
 
@@ -79,7 +98,8 @@ const getLightEdgeLabelCss = (): string => `
   .edgeLabel .label,
   .edgeLabel foreignObject,
   .edgeLabel div,
-  .edgeLabel p {
+  .edgeLabel p,
+  .labelBkg {
     background-color: transparent !important;
     background: transparent !important;
     border: none !important;
@@ -87,8 +107,23 @@ const getLightEdgeLabelCss = (): string => `
     padding: 0 !important;
     margin: 0 !important;
   }
-  .edgeLabel span.edgeLabel,
-  .edgeLabel span {
+  .edgeLabel:empty,
+  .edgeLabel:not(:has(span:not(:empty))),
+  .edgeLabel span:empty,
+  .edgeLabel span.edgeLabel:empty {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .edgeLabel span.edgeLabel:not(:empty),
+  .edgeLabel span:not(:empty) {
     background-color: #ffffff !important;
     color: #1e293b !important;
     border: 1px solid #cbd5e1 !important;
@@ -100,13 +135,16 @@ const getLightEdgeLabelCss = (): string => `
     display: inline-block !important;
     line-height: 1.2 !important;
   }
-  .edgeLabel rect,
-  .labelBkg {
+  .edgeLabel rect[width]:not([width="0"]) {
     rx: 6px !important;
     ry: 6px !important;
     fill: #ffffff !important;
     stroke: #cbd5e1 !important;
     stroke-width: 1px !important;
+  }
+  .edgeLabel rect:not([width]),
+  .edgeLabel rect[width="0"] {
+    display: none !important;
   }
 `;
 

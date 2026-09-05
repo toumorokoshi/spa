@@ -51,4 +51,21 @@ describe('MermaidConfig builder', () => {
     expect(classicCfg.themeVariables?.edgeLabelBackground).toBe('transparent');
     expect(classicCfg.flowchart?.curve).toBe('linear');
   });
+
+  it('hides empty edge label containers and styles only non-empty labels in light theme', () => {
+    const lightCfg = getMermaidConfig('neutral', 'rounded');
+    expect(lightCfg.themeCSS).toContain('.edgeLabel span:empty');
+    expect(lightCfg.themeCSS).toContain('display: none !important');
+    expect(lightCfg.themeCSS).toContain('.edgeLabel span:not(:empty)');
+    expect(lightCfg.themeCSS).toContain('.labelBkg');
+  });
+
+  it('hides empty edge label containers and styles only non-empty labels in dark theme', () => {
+    const darkCfg = getMermaidConfig('dark', 'rounded');
+    expect(darkCfg.themeCSS).toContain('.edgeLabel span:empty');
+    expect(darkCfg.themeCSS).toContain('display: none !important');
+    expect(darkCfg.themeCSS).toContain('.edgeLabel span:not(:empty)');
+    expect(darkCfg.themeCSS).toContain('#1e293b');
+    expect(darkCfg.themeCSS).toContain('.labelBkg');
+  });
 });

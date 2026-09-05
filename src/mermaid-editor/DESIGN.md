@@ -39,3 +39,10 @@ To support diverse workflows, the editor supports 4 export formats:
 ### 5. Non-blocking Diagnostic Error Boundaries
 
 Instead of failing ungracefully on syntax typos during active typing, `renderMermaid` intercepts parse failures and passes structured diagnostics to `DiagramPreview` to render clean, readable syntax error alerts.
+
+### 6. Edge Label Styling & Clean Rendering
+
+Mermaid generates empty `.edgeLabel` placeholder groups for connector edges that lack text labels, positioning them at `(0, 0)`. To prevent empty pill badge boxes and borders from rendering at the top-left origin:
+
+- Theme CSS hides empty edge labels via `:empty` and `:not(:has(span:not(:empty)))` pseudo-classes and scopes border, background, and padding styling strictly to non-empty text spans (`span:not(:empty)`).
+- `cleanRenderedSvg` post-processes the rendered SVG markup to prune empty `.edgeLabel` nodes completely prior to clipboard export and DOM display.
