@@ -17,6 +17,8 @@ export const App = (): JSX.Element => {
     copiedLabel,
     selectPreset,
     clearCode,
+    autoWrapAction,
+    canAutoWrap,
     copyPngAction,
     copySvgAction,
     copyMarkdownAction,
@@ -32,6 +34,8 @@ export const App = (): JSX.Element => {
         onToggleCollapse={toggleCollapse}
         onSelectPreset={selectPreset}
         onClear={clearCode}
+        onAutoWrap={autoWrapAction}
+        canAutoWrap={canAutoWrap}
       />
       <DiagramPreview
         renderResult={renderResult}

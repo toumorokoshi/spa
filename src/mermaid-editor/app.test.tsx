@@ -60,7 +60,7 @@ describe('Mermaid Editor App - Controls and Initial Render', () => {
   });
 });
 
-describe('Mermaid Editor App - Actions and Presets', () => {
+describe('Mermaid Editor App - Presets and Clear', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(mermaid, 'render').mockImplementation(async (_id, code) => {
@@ -97,6 +97,57 @@ describe('Mermaid Editor App - Actions and Presets', () => {
 
     fireEvent.change(select, { target: { value: 'sequence' } });
     expect(textarea.value).toContain('sequenceDiagram');
+  });
+});
+
+describe('Mermaid Editor App - Auto-wrap', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.spyOn(mermaid, 'render').mockImplementation(async (_id, code) => {
+      if (code.includes('invalid')) {
+        throw new Error('Lexical error on line 2');
+      }
+      return {
+        svg: '<svg id="diagram"><g><text>Flowchart</text></g></svg>',
+        bindFunctions: undefined
+      };
+    });
+  });
+
+  it('renders auto-wrap button and disables when code is empty', async () => {
+    const { getByRole } = render(<App />);
+    const wrapBtn = getByRole('button', {
+      name: /auto-wrap text in nodes/i
+    }) as HTMLButtonElement;
+    expect(wrapBtn).toBeTruthy();
+
+    await waitFor(() => {
+      expect(wrapBtn.disabled).toBe(false);
+    });
+
+    const clearBtn = getByRole('button', { name: /clear editor/i });
+    fireEvent.click(clearBtn);
+
+    await waitFor(() => {
+      expect(wrapBtn.disabled).toBe(true);
+    });
+  });
+
+  it('triggers auto-wrap action when clicked', async () => {
+    const { getByRole, findByText } = render(<App />);
+    const wrapBtn = getByRole('button', {
+      name: /auto-wrap text in nodes/i
+    }) as HTMLButtonElement;
+
+    await waitFor(() => {
+      expect(wrapBtn.disabled).toBe(false);
+    });
+
+    fireEvent.click(wrapBtn);
+
+    // Default mock SVG does not need wrapping, so toast shows "Labels already fit"
+    const toast = await findByText(/Labels already fit/i);
+    expect(toast).toBeTruthy();
   });
 });
 

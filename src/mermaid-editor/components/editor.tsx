@@ -8,6 +8,8 @@ export interface EditorProps {
   readonly onToggleCollapse: () => void;
   readonly onSelectPreset: (presetId: string) => void;
   readonly onClear: () => void;
+  readonly onAutoWrap: () => void;
+  readonly canAutoWrap: boolean;
 }
 
 interface CollapseButtonProps {
@@ -38,11 +40,15 @@ const CollapseButton = ({
 interface EditorControlsProps {
   readonly onSelectPreset: (presetId: string) => void;
   readonly onClear: () => void;
+  readonly onAutoWrap: () => void;
+  readonly canAutoWrap: boolean;
 }
 
 const EditorControls = ({
   onSelectPreset,
-  onClear
+  onClear,
+  onAutoWrap,
+  canAutoWrap
 }: EditorControlsProps): JSX.Element => {
   const handlePresetChange = (
     e: JSX.TargetedEvent<HTMLSelectElement>
@@ -54,34 +60,49 @@ const EditorControls = ({
   };
 
   return (
-    <div className="editor-controls">
-      <label htmlFor="preset-select" className="visually-hidden">
-        Load Preset
-      </label>
-      <select
-        id="preset-select"
-        className="preset-select"
-        onChange={handlePresetChange}
-        defaultValue=""
-        aria-label="Choose a diagram preset"
-      >
-        <option value="" disabled>
-          Select a template...
-        </option>
-        {DIAGRAM_PRESETS.map((preset) => (
-          <option key={preset.id} value={preset.id}>
-            {preset.name}
+    <div className="editor-controls-group">
+      <div className="editor-controls">
+        <label htmlFor="preset-select" className="visually-hidden">
+          Load Preset
+        </label>
+        <select
+          id="preset-select"
+          className="preset-select"
+          onChange={handlePresetChange}
+          defaultValue=""
+          aria-label="Choose a diagram preset"
+        >
+          <option value="" disabled>
+            Select a template...
           </option>
-        ))}
-      </select>
+          {DIAGRAM_PRESETS.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.name}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="btn btn-secondary clear-btn"
+          onClick={onClear}
+          title="Clear editor"
+          aria-label="Clear editor"
+        >
+          Clear
+        </button>
+      </div>
       <button
         type="button"
-        className="btn btn-secondary clear-btn"
-        onClick={onClear}
-        title="Clear editor"
-        aria-label="Clear editor"
+        className="btn btn-secondary auto-wrap-btn"
+        onClick={onAutoWrap}
+        disabled={!canAutoWrap}
+        title="Traverse rendered diagram and wrap long node text with \n"
+        aria-label="Auto-wrap text in nodes"
       >
-        Clear
+        <span className="wrap-icon" aria-hidden="true">
+          ↵
+        </span>{' '}
+        Auto-wrap text
       </button>
     </div>
   );
@@ -117,7 +138,9 @@ export const Editor = ({
   isCollapsed,
   onToggleCollapse,
   onSelectPreset,
-  onClear
+  onClear,
+  onAutoWrap,
+  canAutoWrap
 }: EditorProps): JSX.Element => {
   const panelClass = isCollapsed ? 'editor-panel collapsed' : 'editor-panel';
 
@@ -132,7 +155,12 @@ export const Editor = ({
           />
         </div>
         {!isCollapsed && (
-          <EditorControls onSelectPreset={onSelectPreset} onClear={onClear} />
+          <EditorControls
+            onSelectPreset={onSelectPreset}
+            onClear={onClear}
+            onAutoWrap={onAutoWrap}
+            canAutoWrap={canAutoWrap}
+          />
         )}
       </div>
       {!isCollapsed && <EditorBody code={code} onCodeChange={onCodeChange} />}

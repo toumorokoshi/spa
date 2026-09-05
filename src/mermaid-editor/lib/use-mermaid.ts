@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'preact/hooks';
 import { DEFAULT_DIAGRAM_CODE, getPresetById } from './presets';
 import { renderMermaid, RenderResult } from './renderer';
 import { copyPng, copySvg, copyMarkdown, copyText } from './clipboard';
+import { autoWrapDiagramFromSvg } from './auto-wrap';
 import {
   MermaidTheme,
   DiagramLook,
@@ -68,7 +69,53 @@ export interface MermaidEditorState extends ClipboardActions {
   readonly copiedLabel: string | null;
   readonly selectPreset: (presetId: string) => void;
   readonly clearCode: () => void;
+  readonly autoWrapAction: () => void;
+  readonly canAutoWrap: boolean;
 }
+
+interface AutoWrapHook {
+  readonly autoWrapAction: () => void;
+  readonly canAutoWrap: boolean;
+}
+
+const notifyWrapResult = (
+  count: number,
+  showToast: (msg: string) => void
+): void => {
+  if (count > 0) {
+    const suffix = count > 1 ? 's' : '';
+    showToast(`Auto-wrapped ${count} label${suffix}`);
+  } else {
+    showToast('Labels already fit');
+  }
+};
+
+const useAutoWrap = (
+  code: string,
+  setCode: (code: string) => void,
+  renderResult: RenderResult,
+  showToast: (label: string) => void
+): AutoWrapHook => {
+  const canAutoWrap =
+    renderResult.ok && renderResult.svg.length > 0 && code.trim().length > 0;
+
+  const autoWrapAction = useCallback((): void => {
+    if (!canAutoWrap) return;
+    const svgElement = document.querySelector('.svg-viewport svg');
+    if (!svgElement) return;
+
+    const { updatedCode, wrappedCount } = autoWrapDiagramFromSvg(
+      code,
+      svgElement
+    );
+    if (wrappedCount > 0) {
+      setCode(updatedCode);
+    }
+    notifyWrapResult(wrappedCount, showToast);
+  }, [canAutoWrap, code, setCode, showToast]);
+
+  return { autoWrapAction, canAutoWrap };
+};
 
 export const useMermaidEditor = (): MermaidEditorState => {
   const [code, setCode] = useState<string>(DEFAULT_DIAGRAM_CODE);
@@ -107,6 +154,13 @@ export const useMermaidEditor = (): MermaidEditorState => {
     if (preset) setCode(preset.code);
   }, []);
 
+  const { autoWrapAction, canAutoWrap } = useAutoWrap(
+    code,
+    setCode,
+    renderResult,
+    showToast
+  );
+
   const clipboardActions = useClipboardActions(code, renderResult, showToast);
 
   return {
@@ -122,6 +176,8 @@ export const useMermaidEditor = (): MermaidEditorState => {
     copiedLabel,
     selectPreset,
     clearCode,
+    autoWrapAction,
+    canAutoWrap,
     ...clipboardActions
   };
 };
