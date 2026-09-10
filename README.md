@@ -8,6 +8,13 @@ single-page-application that serves a particular purpose.
 Although each subdirectory under `src/` is its own application, the whole
 project is compiled as a single package and served via GitHub Pages.
 
+## Applications
+
+- **[Random Japanese Flashcards](/spa/src/random-japanese-flashcards/)** — Spaced-repetition Japanese vocabulary flashcard practice.
+- **[Advanced Paster](/spa/src/advanced-paster/)** — Multi-format clipboard converter for rich text, HTML, LaTeX formulas (via Temml), and Markdown.
+- **[Mermaid Editor](/spa/src/mermaid-editor/)** — Live client-side Mermaid diagram editor with theme selection and export.
+- **[Warhammer Pairing Solver](/spa/src/warhammer-pairing/)** — Optimal pairing-strategy solver for WTC/ETC-style 8v8 Warhammer team drafts. Treats the tournament draft as a zero-sum extensive-form game solved via backward induction and nested linear programming. Features direct spreadsheet copy-paste (Excel/Google Sheets), Nash equilibrium calculations, pure-maximin recommendations with exploitability gaps, and an interactive at-the-table live draft assistant.
+
 ## Requirements
 
 - **Local-only at runtime:** Each SPA must work without contacting third-party
