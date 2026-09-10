@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pureMaximin, solveZeroSum } from './matrix-game';
+import { pureMaximin, solve2x2Value, solveZeroSum } from './matrix-game';
 
 describe('matrix-game basic solutions', () => {
   it('solves pure saddle point', () => {
@@ -9,6 +9,7 @@ describe('matrix-game basic solutions', () => {
     ];
     const sol = solveZeroSum(P);
     expect(sol.value).toBeCloseTo(3, 5);
+    expect(solve2x2Value(2, 1, 3, 4)).toBeCloseTo(3, 5);
     expect(sol.aStrategy[1]).toBeCloseTo(1, 5);
     expect(sol.bStrategy[0]).toBeCloseTo(1, 5);
   });
@@ -20,6 +21,7 @@ describe('matrix-game basic solutions', () => {
     ];
     const sol = solveZeroSum(P);
     expect(sol.value).toBeCloseTo(0, 5);
+    expect(solve2x2Value(1, -1, -1, 1)).toBeCloseTo(0, 5);
     expect(sol.aStrategy[0]).toBeCloseTo(0.5, 4);
     expect(sol.aStrategy[1]).toBeCloseTo(0.5, 4);
     expect(sol.bStrategy[0]).toBeCloseTo(0.5, 4);
@@ -33,6 +35,7 @@ describe('matrix-game basic solutions', () => {
     ];
     const sol = solveZeroSum(P);
     expect(sol.value).toBeCloseTo(2.5, 5);
+    expect(solve2x2Value(3, 2, 1, 4)).toBeCloseTo(2.5, 5);
     expect(sol.aStrategy[0]).toBeCloseTo(0.75, 4);
     expect(sol.aStrategy[1]).toBeCloseTo(0.25, 4);
   });

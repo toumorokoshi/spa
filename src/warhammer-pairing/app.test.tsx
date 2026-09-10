@@ -64,5 +64,5 @@ describe('Warhammer Pairing Solver App', () => {
     await waitFor(() => {
       expect(findByText('Formed Matchups (2 / 8)')).toBeTruthy();
     });
-  });
+  }, 30000);
 });

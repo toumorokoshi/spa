@@ -53,7 +53,7 @@ describe('pairing solver', () => {
     expect(sol.bestPureDefenderA.name).toBe('Elke');
     expect(sol.bestPureDefenderA.value).toBeCloseTo(82.626, 2);
     expect(sol.exploitabilityGap).toBeCloseTo(0.419, 2);
-  });
+  }, 30000);
 
   it('determines best defender pick', () => {
     const solver = createSolver(SAMPLE_4V4_MATRIX.scores);

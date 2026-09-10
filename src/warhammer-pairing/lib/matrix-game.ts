@@ -40,6 +40,28 @@ const findSaddlePoint = (
 const isInUnitInterval = (val: number): boolean =>
   val >= -EPSILON && val <= 1 + EPSILON;
 
+export const solve2x2Value = (
+  a: number,
+  b: number,
+  c: number,
+  d: number
+): number => {
+  const maximin = Math.max(Math.min(a, b), Math.min(c, d));
+  const minimax = Math.min(Math.max(a, c), Math.max(b, d));
+
+  if (Math.abs(maximin - minimax) <= EPSILON) {
+    return maximin;
+  }
+  const denom = a + d - (b + c);
+  if (Math.abs(denom) <= PIVOT_EPSILON) {
+    return maximin;
+  }
+  const x1 = (d - c) / denom;
+  const y1 = (d - b) / denom;
+  const valid = isInUnitInterval(x1) && isInUnitInterval(y1);
+  return valid ? (a * d - b * c) / denom : maximin;
+};
+
 const solve2x2Mixed = (
   matrix: readonly (readonly number[])[]
 ): ZeroSumSolution | null => {

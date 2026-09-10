@@ -1,8 +1,9 @@
-import { pureMaximin, solveZeroSum } from './matrix-game';
+import { pureMaximin, solve2x2Value, solveZeroSum } from './matrix-game';
 import type { RoundSolution, Solution, StageGame } from './types';
 
 const ROUND_3_COUNT = 4;
-const MASK_SHIFT = 12;
+const MASK_KEY_SHIFT = 8;
+const CACHE_CAPACITY = 65536;
 const MAX_PLAYERS = 8;
 
 export const getIndicesFromMask = (
@@ -85,6 +86,50 @@ interface DefenderPairContext {
   readonly getValue: (maskA: number, maskB: number) => number;
 }
 
+const isMatch = (x: number, p: readonly [number, number]): boolean =>
+  x === p[0] || x === p[1];
+
+const getHoldPlayer = (
+  rest: readonly number[],
+  p: readonly [number, number]
+): number => {
+  if (!isMatch(rest[0], p)) return rest[0];
+  if (!isMatch(rest[1], p)) return rest[1];
+  return rest[2];
+};
+
+const computeFastPickValue = (
+  ctx: DefenderPairContext,
+  pa: readonly [number, number],
+  pb: readonly [number, number],
+  holdA: number,
+  holdB: number
+): number => {
+  const s = ctx.scores;
+  const imm00 = s[ctx.dA][pb[0]] + s[pa[0]][ctx.dB];
+  const imm01 = s[ctx.dA][pb[0]] + s[pa[1]][ctx.dB];
+  const imm10 = s[ctx.dA][pb[1]] + s[pa[0]][ctx.dB];
+  const imm11 = s[ctx.dA][pb[1]] + s[pa[1]][ctx.dB];
+
+  if (ctx.isRound3) {
+    const f00 = s[pa[1]][holdB] + s[holdA][pb[1]];
+    const f01 = s[pa[0]][holdB] + s[holdA][pb[1]];
+    const f10 = s[pa[1]][holdB] + s[holdA][pb[0]];
+    const f11 = s[pa[0]][holdB] + s[holdA][pb[0]];
+    return solve2x2Value(imm00 + f00, imm01 + f01, imm10 + f10, imm11 + f11);
+  }
+
+  const mA0 = ctx.maskA & ~((1 << ctx.dA) | (1 << pa[0]));
+  const mA1 = ctx.maskA & ~((1 << ctx.dA) | (1 << pa[1]));
+  const mB0 = ctx.maskB & ~((1 << ctx.dB) | (1 << pb[0]));
+  const mB1 = ctx.maskB & ~((1 << ctx.dB) | (1 << pb[1]));
+  const f00 = ctx.getValue(mA0, mB0);
+  const f01 = ctx.getValue(mA1, mB0);
+  const f10 = ctx.getValue(mA0, mB1);
+  const f11 = ctx.getValue(mA1, mB1);
+  return solve2x2Value(imm00 + f00, imm01 + f01, imm10 + f10, imm11 + f11);
+};
+
 const solveDefenderPair = (
   ctx: DefenderPairContext
 ): {
@@ -96,24 +141,13 @@ const solveDefenderPair = (
   const pairsA = getPairs(restA);
   const pairsB = getPairs(restB);
 
-  const atkPayoff = pairsA.map((pa) =>
-    pairsB.map((pb) => {
-      const pickP = computePickMatrix({
-        scores: ctx.scores,
-        maskA: ctx.maskA,
-        maskB: ctx.maskB,
-        dA: ctx.dA,
-        dB: ctx.dB,
-        pa,
-        pb,
-        restA,
-        restB,
-        isRound3: ctx.isRound3,
-        getValue: ctx.getValue
-      });
-      return solveZeroSum(pickP).value;
-    })
-  );
+  const atkPayoff = pairsA.map((pa) => {
+    const holdA = ctx.isRound3 ? getHoldPlayer(restA, pa) : 0;
+    return pairsB.map((pb) => {
+      const holdB = ctx.isRound3 ? getHoldPlayer(restB, pb) : 0;
+      return computeFastPickValue(ctx, pa, pb, holdA, holdB);
+    });
+  });
 
   const sol2 = solveZeroSum(atkPayoff);
   if (!ctx.keepSubstages) {
@@ -275,13 +309,13 @@ const computeBestPick = (
 export const createSolver = (
   scores: readonly (readonly number[])[]
 ): SolverInstance => {
-  const cache = new Map<number, number>();
+  const cache = new Float64Array(CACHE_CAPACITY).fill(Number.NaN);
   const totalPlayers = scores.length;
 
   const stateValue = (maskA: number, maskB: number): number => {
-    const key = (maskA << MASK_SHIFT) | maskB;
-    const cached = cache.get(key);
-    if (cached !== undefined) return cached;
+    const key = (maskA << MASK_KEY_SHIFT) | maskB;
+    const cached = cache[key];
+    if (!Number.isNaN(cached)) return cached;
     const computed = solveRoundInternal(
       scores,
       totalPlayers,
@@ -290,7 +324,7 @@ export const createSolver = (
       false,
       stateValue
     ).defender.value;
-    cache.set(key, computed);
+    cache[key] = computed;
     return computed;
   };
 
