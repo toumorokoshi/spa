@@ -237,8 +237,45 @@ const processBlockReplacementFull = (
   return cleanedBefore + converted + after;
 };
 
-// Recursive brace-aware handler for {\\displaystyle ...} / {\\textstyle ...} in plain text
-const processStyleBracesToUnicode = (text: string): string => {
+const hasExplicitNewline = (
+  beforeWithoutFallback: string,
+  after: string
+): boolean => {
+  const isStartOfLine =
+    beforeWithoutFallback.trim() === '' || /\n\s*$/.test(beforeWithoutFallback);
+  const isEndOfLine = after.trim() === '' || /^\s*\r?\n/.test(after);
+  return isStartOfLine && isEndOfLine;
+};
+
+const convertStyleBraceBlock = (
+  before: string,
+  after: string,
+  latexInner: string,
+  isUnicode: boolean
+): string => {
+  const unescapedLatex = unwrapStyleCommands(latexInner);
+  const unicodeConverted = latexToText(unescapedLatex);
+  if (isUnicode) {
+    return processBlockReplacementFull(before, after, unicodeConverted);
+  }
+  const fallbackSuffix = unicodeConverted
+    ? findFallbackSuffix(before, unicodeConverted)
+    : '';
+  const beforeWithoutFallback = fallbackSuffix
+    ? before.slice(0, before.length - fallbackSuffix.length)
+    : before;
+  const isDisplay = hasExplicitNewline(beforeWithoutFallback, after);
+  const mathmlConverted = latexToMathML(unescapedLatex, isDisplay);
+  return processBlockReplacementFull(
+    before,
+    after,
+    mathmlConverted,
+    unicodeConverted
+  );
+};
+
+// Recursive brace-aware handler for {\displaystyle ...} / {\textstyle ...} in plain text
+const processStyleBraces = (text: string, isUnicode: boolean): string => {
   const pattern = /\{\s*\\(?:display|text|script|scriptscript)style/i;
   const match = pattern.exec(text);
   if (!match) {
@@ -252,14 +289,18 @@ const processStyleBracesToUnicode = (text: string): string => {
     const before = text.slice(0, startIdx);
     const after = text.slice(j);
     const latexInner = text.slice(startIdx + matchLength, j - 1);
-    const converted = latexToText(unwrapStyleCommands(latexInner));
-    const processedText = processBlockReplacementFull(before, after, converted);
-    return processStyleBracesToUnicode(processedText);
+    const processedText = convertStyleBraceBlock(
+      before,
+      after,
+      latexInner,
+      isUnicode
+    );
+    return processStyleBraces(processedText, isUnicode);
   }
 
   const before = text.slice(0, startIdx + matchLength);
   const after = text.slice(startIdx + matchLength);
-  return before + processStyleBracesToUnicode(after);
+  return before + processStyleBraces(after, isUnicode);
 };
 
 const getCleanedBefore = (beforeWithoutFallback: string): string => {
@@ -279,10 +320,7 @@ const processBlockReplacement = (
 ): { beforeClean: string; blockOutput: string } => {
   const cleanLatex = unwrapStyleCommands(mathExpr);
   const isDisplayMode =
-    isDisplayHint ||
-    mathExpr.includes('\\displaystyle') ||
-    mathExpr.startsWith('$$') ||
-    mathExpr.startsWith('\\[');
+    isDisplayHint || mathExpr.startsWith('$$') || mathExpr.startsWith('\\[');
 
   const converted = isUnicode
     ? latexToText(cleanLatex)
@@ -414,15 +452,14 @@ const processDisplayStyleMath = (html: string, isUnicode: boolean): string => {
 };
 
 export const processDisplayStyleToUnicode = (html: string): string => {
-  const braceResolved = processStyleBracesToUnicode(html);
+  const braceResolved = processStyleBraces(html, true);
   return processDisplayStyleMath(braceResolved, true);
 };
 
-// No brace-resolving counterpart to processStyleBracesToUnicode: on the MathML
-// side the {\displaystyle...} patterns are consumed by cleanHtmlMathToMathML,
-// which reads them off the DOM rather than out of the raw string.
-export const processDisplayStyleToMathML = (html: string): string =>
-  processDisplayStyleMath(html, false);
+export const processDisplayStyleToMathML = (html: string): string => {
+  const braceResolved = processStyleBraces(html, false);
+  return processDisplayStyleMath(braceResolved, false);
+};
 
 /**
  * Replaces every math container in `html` -- MathML trees, `data-math`

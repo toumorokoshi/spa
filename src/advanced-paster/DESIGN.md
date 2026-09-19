@@ -26,8 +26,12 @@ API is available under jsdom in tests.
 
 Rendered math is spliced back in as a string via placeholder text nodes rather
 than as DOM nodes, because Temml's MathML output is sensitive to serialization
-(namespaces, `style` attributes, entity forms). See
-`specs/advanced-paster.md` for the recognition and extraction rules.
+(namespaces, `style` attributes, entity forms). Math formulas embedded in
+surrounding prose (such as Wikipedia's `{\displaystyle ...}` snippets in plain
+text, or inline math elements in HTML) default to inline MathML so they stay on
+the same line, preserving block display mode only when surrounded by explicit
+newlines or display-mode markup. See `specs/advanced-paster.md` for the
+recognition and extraction rules.
 
 ### 3. Raw Inputs Row
 

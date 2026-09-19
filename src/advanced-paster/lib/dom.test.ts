@@ -40,7 +40,7 @@ describe('transformMathElements', () => {
   it('emits one result for a Wikipedia span wrapping both MathML and a fallback image', () => {
     const html =
       '<span class="mwe-math-element"><span class="mwe-math-mathml-inline"><math alttext="{\\displaystyle U}"><semantics><mi>U</mi><annotation encoding="application/x-tex">{\\displaystyle U}</annotation></semantics></math></span><img class="mwe-math-fallback-image-inline" src="/u.svg" alt="U" /></span>';
-    expect(transformMathElements(html, label)).toBe('[block:U]');
+    expect(transformMathElements(html, label)).toBe('[inline:U]');
   });
 
   it('preserves surrounding markup around replaced math', () => {

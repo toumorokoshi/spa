@@ -45,7 +45,10 @@ const TEX_ANNOTATION_SELECTOR =
 
 const WIKIMEDIA_MATH_SRC = /\/media\/math\/render\//i;
 const MATH_FALLBACK_IMAGE_CLASS = /mwe-math-fallback-image/i;
-const BLOCK_CLASS = /math-block|mwe-math-element-block/i;
+const BLOCK_CLASS =
+  /math-block|mwe-math-element-block|mwe-math-mathml-display|mwe-math-fallback-image-display/i;
+const BLOCK_SELECTOR =
+  '.math-block, .mwe-math-element-block, .mwe-math-mathml-display, .mwe-math-fallback-image-display';
 const TEMML_CLASS = /tml-(?:display|inline)/;
 const TEMML_STYLE = /display:\s*(?:block|inline)\s+math/;
 const DISPLAY_DELIMITER = /\$\$|\\\[/;
@@ -137,17 +140,37 @@ const readLatex = (element: Element): string | null =>
 const hasBlockDisplayAttribute = (element: Element): boolean =>
   selfOrDescendant(element, '[display="block"]') !== null;
 
+const hasBlockClass = (element: Element): boolean =>
+  BLOCK_CLASS.test(attr(element, 'class')) ||
+  selfOrDescendant(element, BLOCK_SELECTOR) !== null;
+
 const DISPLAY_HINTS = [
   (element: Element): boolean => element.tagName === 'DIV',
-  (element: Element): boolean => BLOCK_CLASS.test(attr(element, 'class')),
+  hasBlockClass,
   hasBlockDisplayAttribute,
   (element: Element): boolean =>
     DISPLAY_DELIMITER.test(element.textContent ?? '')
 ];
 
-const isDisplayMath = (element: Element, latex: string): boolean =>
-  latex.includes('\\displaystyle') ||
-  DISPLAY_HINTS.some((hint) => hint(element));
+const INLINE_CLASS =
+  /math-inline|mwe-math-mathml-inline|mwe-math-fallback-image-inline/i;
+
+const isExplicitInline = (element: Element): boolean =>
+  INLINE_CLASS.test(attr(element, 'class')) ||
+  selfOrDescendant(
+    element,
+    '.math-inline, .mwe-math-mathml-inline, .mwe-math-fallback-image-inline'
+  ) !== null;
+
+const isDisplayMath = (element: Element, latex: string): boolean => {
+  if (isExplicitInline(element)) {
+    return false;
+  }
+  return (
+    DISPLAY_HINTS.some((hint) => hint(element)) ||
+    latex.includes('\\displaystyle')
+  );
+};
 
 /**
  * Reads an element's math source. Attribute values and text content arrive

@@ -36,10 +36,14 @@ images.
   arrive already decoded, so `&amp;` in a matrix body needs no manual pass.
 - **Temml output is skipped**, identified by its `tml-display` / `tml-inline`
   class or `display:block math` style, so a stage never re-converts its own
-  output.
-- **Display mode** is inferred from `\displaystyle`, a `<div>` container, a
-  `*-block` class, a `display="block"` attribute, or `$$` / `\[` delimiters.
-- **Rendered math is spliced in as a string.** Each match becomes a placeholder
+- **Display mode** defaults to inline unless explicit block hints or newlines
+  indicate display math. In HTML, explicit inline classes (`.math-inline`,
+  `.mwe-math-mathml-inline`, `.mwe-math-fallback-image-inline`) force inline
+  mode, overriding `\displaystyle` wrappers; block mode is inferred from `<div>`
+  containers, `*-block` or `*-display` classes, `display="block"`, or `$$` / `\[`
+  delimiters. In plain text / markdown, LaTeX snippets (`{\displaystyle ...}`)
+  render as inline MathML on the same line unless surrounded by explicit
+  newlines.
   text node, the tree is serialized once, then placeholders are substituted
   textually. Temml's MathML is serialization-sensitive (namespaces, `style`
   attributes, entity forms), so the parser is used only to find and read math,

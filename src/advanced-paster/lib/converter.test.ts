@@ -554,4 +554,54 @@ Even more concisely, a vector space is a module over a field.[7]`;
     expect(result.html).not.toContain('color="#b22222"');
     expect(result.html).not.toContain('\\m</mtext>');
   });
+
+  it('converts Wikipedia paste with multiple inline formulas to inline MathML on the same line', () => {
+    const plainText = `The left multiplication by 
+C
+m
+{\\displaystyle C_{m}} subtracts a corresponding mean value from each of the n columns, so that each column of the product 
+C
+m
+X
+{\\displaystyle C_{m}\\,X} has a zero mean. Similarly, the multiplication by 
+C
+n
+{\\displaystyle C_{n}} on the right subtracts a corresponding mean value from each of the m rows, and each row of the product 
+X
+C
+n
+{\\displaystyle X\\,C_{n}} has a zero mean. The multiplication on both sides creates a doubly centred matrix 
+C
+m
+X
+C
+n
+{\\displaystyle C_{m}\\,X\\,C_{n}}, whose row and column means are equal to zero.`;
+
+    const result = convert({ plainText }, 'auto');
+
+    // Formulas embedded in prose should be inline MathML (not display="block")
+    expect(result.html).not.toContain('display="block"');
+    expect(result.html).not.toContain('class="tml-display"');
+    expect(result.html).toContain('<math');
+    expect(result.html).toContain('<msub><mi>C</mi><mi>m</mi></msub>');
+    // Verify fallback texts were cleaned up
+    expect(result.html).not.toContain('C\nm\n');
+    // Verify the whole text remains within paragraph flow
+    expect(result.html).toContain('The left multiplication by');
+    expect(result.html).toContain('subtracts a corresponding mean value');
+  });
+
+  it('preserves block MathML when displaystyle LaTeX has explicit newlines', () => {
+    const plainText = `Here is a formula:
+
+{\\displaystyle \\sum_{i=1}^n i = \\frac{n(n+1)}{2}}
+
+And here is text after.`;
+
+    const result = convert({ plainText }, 'auto');
+
+    expect(result.html).toContain('display="block"');
+    expect(result.html).toContain('<mfrac>');
+  });
 });
