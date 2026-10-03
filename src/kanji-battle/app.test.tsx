@@ -321,10 +321,10 @@ describe('App tabs and shop view interactions', () => {
     fireEvent.click(rendered.getByRole('button', { name: /minifig shop/i }));
 
     expect(rendered.getByText('Ninja Minifig')).toBeTruthy();
-    const buyBtn = rendered.getByRole('button', {
+    const buyBtns = rendered.getAllByRole('button', {
       name: new RegExp(`buy for ${SHOP_PRICE_TIER_1} pts`, 'i')
     });
-    fireEvent.click(buyBtn);
+    fireEvent.click(buyBtns[0]);
 
     expect(rendered.getByText('Equipped')).toBeTruthy();
     expect(
@@ -335,5 +335,98 @@ describe('App tabs and shop view interactions', () => {
         )
       )
     ).toBeTruthy();
+  });
+});
+
+describe('App blind box unboxing upon round completion', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('receives blind box after completing round, clicks box to reveal minifig, and adds to inventory', () => {
+    const rendered = render(<App />);
+    startPracticeSession(rendered);
+
+    const canvas = rendered.getByLabelText(
+      /stylus handwriting practice canvas/i
+    );
+    canvas.setPointerCapture = () => {};
+    canvas.releasePointerCapture = () => {};
+    canvas.hasPointerCapture = () => false;
+
+    fireEvent.pointerDown(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 150, clientY: 150, pointerId: 1 });
+    fireEvent.pointerUp(canvas, { pointerId: 1 });
+
+    const submitCellBtn = rendered.getByRole('button', {
+      name: /submit character/i
+    });
+    fireEvent.click(submitCellBtn);
+
+    const submitSentenceBtn = rendered.getByRole('button', {
+      name: /submit sentence/i
+    });
+    fireEvent.click(submitSentenceBtn);
+
+    expect(
+      rendered.getByRole('heading', { name: /sentence submitted!/i })
+    ).toBeTruthy();
+
+    const openBoxBtn = rendered.getByRole('button', {
+      name: /open mystery blind box/i
+    });
+    expect(openBoxBtn).toBeTruthy();
+
+    fireEvent.click(openBoxBtn);
+
+    expect(
+      rendered.getByText(/added to your minifigure inventory!/i)
+    ).toBeTruthy();
+  });
+});
+
+describe('App inventory tab viewing and equipping', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('displays inventory with duplicate counts and allows equipping', () => {
+    localStorage.setItem(
+      STORAGE_PROFILE_KEY,
+      JSON.stringify({
+        points: 0,
+        purchasedItemIds: ['dinosaur-minifig', 'king-minifig'],
+        inventory: [
+          { id: 'dinosaur-minifig', count: 3 },
+          { id: 'king-minifig', count: 1 }
+        ],
+        unopenedBoxesCount: 0,
+        equippedItemId: 'dinosaur-minifig'
+      })
+    );
+
+    const rendered = render(<App />);
+    const invTabBtn = rendered.getByRole('button', { name: /inventory/i });
+    fireEvent.click(invTabBtn);
+
+    expect(
+      rendered.getByRole('heading', { name: /minifigure inventory/i })
+    ).toBeTruthy();
+    expect(
+      rendered.getByRole('region', { name: /inventory items/i })
+    ).toBeTruthy();
+
+    expect(rendered.getByText('Dinosaur Minifig')).toBeTruthy();
+    expect(rendered.getByText('King Minifig')).toBeTruthy();
+    expect(rendered.getByText('x3')).toBeTruthy();
+    expect(rendered.getByText('x1')).toBeTruthy();
+
+    expect(rendered.getByText('Equipped')).toBeTruthy();
+    const equipKingBtn = rendered.getByRole('button', { name: /equip/i });
+    fireEvent.click(equipKingBtn);
+
+    expect(
+      rendered.getByLabelText(/equipped companion/i).textContent
+    ).toContain('King Minifig');
   });
 });

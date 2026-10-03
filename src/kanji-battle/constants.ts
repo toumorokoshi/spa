@@ -38,6 +38,7 @@ export const SHOP_PRICE_TIER_3 = 200;
 export const SHOP_PRICE_TIER_4 = 250;
 export const SHOP_PRICE_TIER_5 = 300;
 export const SHOP_PRICE_TIER_6 = 400;
+export const MIN_MINIFIGURES_COUNT = 20;
 
 import { KanjiYearOption } from './types';
 

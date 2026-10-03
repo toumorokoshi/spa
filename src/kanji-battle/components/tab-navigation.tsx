@@ -1,10 +1,11 @@
 import { ShopItem } from '../types';
 
 interface TabNavigationProps {
-  readonly activeTab: 'practice' | 'shop';
+  readonly activeTab: 'practice' | 'inventory' | 'shop';
   readonly points: number;
+  readonly unopenedBoxesCount: number;
   readonly equippedItem: ShopItem | null;
-  readonly onTabChange: (tab: 'practice' | 'shop') => void;
+  readonly onTabChange: (tab: 'practice' | 'inventory' | 'shop') => void;
 }
 
 const CompanionBadge = ({ item }: { readonly item: ShopItem | null }) => {
@@ -35,28 +36,39 @@ const TabButton = ({ isActive, label, onClick }: TabButtonProps) => (
 export const TabNavigation = ({
   activeTab,
   points,
+  unopenedBoxesCount,
   equippedItem,
   onTabChange
-}: TabNavigationProps) => (
-  <nav className="tab-nav" aria-label="Game navigation">
-    <div className="tab-buttons">
-      <TabButton
-        isActive={activeTab === 'practice'}
-        label="Practice"
-        onClick={() => onTabChange('practice')}
-      />
-      <TabButton
-        isActive={activeTab === 'shop'}
-        label="Minifig Shop"
-        onClick={() => onTabChange('shop')}
-      />
-    </div>
+}: TabNavigationProps) => {
+  const inventoryLabel =
+    unopenedBoxesCount > 0 ? `Inventory (${unopenedBoxesCount})` : 'Inventory';
 
-    <div className="header-stats">
-      <CompanionBadge item={equippedItem} />
-      <span className="points-pill" aria-label={`Points balance: ${points}`}>
-        🪙 {points} pts
-      </span>
-    </div>
-  </nav>
-);
+  return (
+    <nav className="tab-nav" aria-label="Game navigation">
+      <div className="tab-buttons">
+        <TabButton
+          isActive={activeTab === 'practice'}
+          label="Practice"
+          onClick={() => onTabChange('practice')}
+        />
+        <TabButton
+          isActive={activeTab === 'inventory'}
+          label={inventoryLabel}
+          onClick={() => onTabChange('inventory')}
+        />
+        <TabButton
+          isActive={activeTab === 'shop'}
+          label="Minifig Shop"
+          onClick={() => onTabChange('shop')}
+        />
+      </div>
+
+      <div className="header-stats">
+        <CompanionBadge item={equippedItem} />
+        <span className="points-pill" aria-label={`Points balance: ${points}`}>
+          🪙 {points} pts
+        </span>
+      </div>
+    </nav>
+  );
+};

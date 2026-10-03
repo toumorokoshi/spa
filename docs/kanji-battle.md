@@ -9,7 +9,9 @@ Single-page app under `src/kanji-battle/`: an interactive Japanese sentence writ
 - **Freeform Writing Flow**: The player does not need to specify hiragana beforehand. They write each cell freely on the stylus canvas, then click "Submit Character ▶" to commit strokes and advance to the next cell.
 - **Target Kanji Real-Time Stroke Order Enforcement**: For kanji, the player selects the target kanji card they are writing, and the game enforces stroke order and stroke geometry in real time with guidelines and hints.
 - **End-of-Sentence Evaluation & Breakdown**: Correctness evaluation is performed upon sentence submission. The system verifies target kanji, matches handwritten kana strokes, displays an evaluated character chip breakdown in a submission modal, and awards points based on target kanji used (`+50 pts` per target kanji, plus completion bonus). Points persist in `localStorage`.
-- **Minifigure Shop**: Players can spend accumulated points to unlock and equip collectible LEGO minifigure companions that appear in the app header.
+- **Blind Boxes**: Completing a practice round awards a mystery blind box. Players click the box to unbox a random collectible minifigure with pop-out reveal animations. Unboxed figures are added to the player's inventory, and duplicates increase the item's count badge.
+- **Minifigure Inventory**: A dedicated Inventory tab displays all purchased items and received minifigures with owned duplicate counts (`x1`, `x2`, etc.), total collection metrics, and equipping controls. Any unopened blind boxes can also be opened directly from the inventory.
+- **Minifigure Collection & Shop**: Features an expanded catalog of 24 brick companions (including Dinosaur 🦖, Ninja 🥷, King 👑, and Jester 🃏) that players can collect via blind boxes or purchase with practice points and equip in the header.
 
 ## Configuration
 

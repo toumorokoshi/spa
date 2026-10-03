@@ -94,7 +94,7 @@ export const createInitialGameState = (
 
 export const switchTab = (
   state: GameState,
-  tab: 'practice' | 'shop'
+  tab: 'practice' | 'inventory' | 'shop'
 ): GameState => ({
   ...state,
   activeTab: tab

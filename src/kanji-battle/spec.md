@@ -2,13 +2,20 @@
 
 AGENTS SHOULD NOT EDIT THIS FILE
 
-## Shop
+## Blind Boxes
 
-The player can use points to buy things from the shop.
+The player receive a blind box with a minifigure inside it, after completing a round.
 
-The shop has:
+The experience is:
 
-- lego minifigures, or something like it.
+1. a box appears
+2. the user clicks on the box
+3. one of the minifigures, at random, appears
+4. the minifigure is added to the players inventory. Duplicates are added and increase the count.
+
+## Inventory
+
+The player has the ability to view their inventory. This shows all purchased items and received minifigures.
 
 ## Scoring points
 
@@ -47,3 +54,14 @@ For configuration, before the a game mode begins, the user may select first the 
 1. select the year of kanji.
 2. select the kanji to practice.
 3. start the game.
+
+### Minifigures
+
+The minifigure set includes, at minimum:
+
+- A dinosaur minifigure
+- A ninja
+- A king
+- A jester
+
+There should be at least 20 minifigures

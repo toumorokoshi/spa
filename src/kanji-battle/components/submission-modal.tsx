@@ -1,4 +1,5 @@
-import { CellEvaluation, SentenceSubmissionResult } from '../types';
+import { CellEvaluation, SentenceSubmissionResult, ShopItem } from '../types';
+import { BlindBoxCard } from './blind-box-card';
 
 interface StatsProps {
   readonly result: SentenceSubmissionResult;
@@ -95,20 +96,30 @@ const SubmissionActions = ({
   </div>
 );
 
-interface SubmissionModalProps {
+export interface SubmissionModalProps {
   readonly result: SentenceSubmissionResult;
   readonly totalTargets: number;
+  readonly unopenedBoxesCount: number;
+  readonly equippedItemId: string | null;
+  readonly onOpenBlindBox: (item: ShopItem) => void;
+  readonly onEquip: (itemId: string) => void;
   readonly onNextChallenge: () => void;
   readonly onReconfigure?: () => void;
   readonly onClose: () => void;
+  readonly randomFn?: () => number;
 }
 
 export const SubmissionModal = ({
   result,
   totalTargets,
+  unopenedBoxesCount,
+  equippedItemId,
+  onOpenBlindBox,
+  onEquip,
   onNextChallenge,
   onReconfigure,
-  onClose
+  onClose,
+  randomFn
 }: SubmissionModalProps) => (
   <div
     className="submission-modal-backdrop"
@@ -122,6 +133,17 @@ export const SubmissionModal = ({
       </div>
       <h2>Sentence Submitted!</h2>
       <SubmissionStats result={result} totalTargets={totalTargets} />
+
+      <div className="submission-reward-section">
+        <BlindBoxCard
+          unopenedCount={unopenedBoxesCount}
+          onOpenBox={onOpenBlindBox}
+          onEquip={onEquip}
+          equippedItemId={equippedItemId}
+          randomFn={randomFn}
+        />
+      </div>
+
       <SubmissionActions
         onNextChallenge={onNextChallenge}
         onReconfigure={onReconfigure}

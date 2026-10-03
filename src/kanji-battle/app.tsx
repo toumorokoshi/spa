@@ -9,7 +9,13 @@ import {
 import { getCharacterData } from './character-data';
 import { matchStroke } from './stroke-matcher';
 import { SHOP_ITEMS, getShopItemById } from './shop-data';
-import { awardSentencePoints, purchaseItem, equipItem } from './shop-logic';
+import {
+  awardSentencePoints,
+  awardBlindBox,
+  openBlindBox,
+  purchaseItem,
+  equipItem
+} from './shop-logic';
 import { loadProfile, saveProfile } from './profile-storage';
 import { loadConfig, saveConfig } from './config-storage';
 import {
@@ -37,6 +43,7 @@ import {
 } from './game-logic';
 import { TabNavigation } from './components/tab-navigation';
 import { ShopView } from './components/shop-view';
+import { InventoryView } from './components/inventory-view';
 import { CharacterStatus } from './components/character-status';
 import { WritingCanvas } from './components/writing-canvas';
 import { TargetKanjiBanner } from './components/target-kanji-banner';
@@ -90,6 +97,10 @@ interface PracticeAreaProps {
   readonly totalStrokes: number;
   readonly usedTargetsCount: number;
   readonly hasWrittenAny: boolean;
+  readonly unopenedBoxesCount: number;
+  readonly equippedItemId: string | null;
+  readonly onOpenBlindBox: (item: ShopItem) => void;
+  readonly onEquip: (itemId: string) => void;
   readonly onSelectTarget: (char: string) => void;
   readonly onSelectCell: (index: number) => void;
   readonly onClearActiveCell: () => void;
@@ -209,6 +220,10 @@ const PracticeArea = ({
   totalStrokes,
   usedTargetsCount,
   hasWrittenAny,
+  unopenedBoxesCount,
+  equippedItemId,
+  onOpenBlindBox,
+  onEquip,
   onSelectTarget,
   onSelectCell,
   onClearActiveCell,
@@ -255,6 +270,10 @@ const PracticeArea = ({
       <SubmissionModal
         result={state.submissionResult}
         totalTargets={state.targetKanji.length}
+        unopenedBoxesCount={unopenedBoxesCount}
+        equippedItemId={equippedItemId}
+        onOpenBlindBox={onOpenBlindBox}
+        onEquip={onEquip}
         onNextChallenge={onNextChallenge}
         onReconfigure={onOpenConfig}
         onClose={onCloseSubmission}
@@ -290,7 +309,31 @@ const useProfile = () => {
     });
   };
 
-  return { profile, onPurchase, onEquip, onAwardPoints };
+  const onOpenBlindBox = (item: ShopItem) => {
+    setProfile((prev) => {
+      const next = openBlindBox(prev, item.id);
+      saveProfile(next);
+      return next;
+    });
+  };
+
+  const onCompleteRound = (points: number) => {
+    setProfile((prev) => {
+      const withPoints = awardSentencePoints(prev, points);
+      const withBox = awardBlindBox(withPoints);
+      saveProfile(withBox);
+      return withBox;
+    });
+  };
+
+  return {
+    profile,
+    onPurchase,
+    onEquip,
+    onAwardPoints,
+    onOpenBlindBox,
+    onCompleteRound
+  };
 };
 
 const resolveEquippedItem = (id: string | null): ShopItem | null => {
@@ -299,11 +342,12 @@ const resolveEquippedItem = (id: string | null): ShopItem | null => {
 };
 
 interface ActiveViewProps {
-  readonly activeTab: 'practice' | 'shop';
+  readonly activeTab: 'practice' | 'inventory' | 'shop';
   readonly isConfiguring: boolean;
   readonly profile: PlayerProfile;
   readonly onPurchase: (item: ShopItem) => void;
   readonly onEquip: (itemId: string) => void;
+  readonly onOpenBlindBox: (item: ShopItem) => void;
   readonly configProps: KanjiConfigViewProps;
   readonly practiceProps: PracticeAreaProps;
 }
@@ -314,6 +358,7 @@ const ActiveView = ({
   profile,
   onPurchase,
   onEquip,
+  onOpenBlindBox,
   configProps,
   practiceProps
 }: ActiveViewProps) => {
@@ -324,6 +369,16 @@ const ActiveView = ({
         profile={profile}
         onPurchase={onPurchase}
         onEquip={onEquip}
+      />
+    );
+  }
+  if (activeTab === 'inventory') {
+    return (
+      <InventoryView
+        profile={profile}
+        items={SHOP_ITEMS}
+        onEquip={onEquip}
+        onOpenBlindBox={onOpenBlindBox}
       />
     );
   }
@@ -399,7 +454,7 @@ const createConfigProps = (
   onCancel: () => setState(closeConfiguration)
 });
 
-const useKanjiGame = (onAwardPoints: (points: number) => void) => {
+const useKanjiGame = (onCompleteRound: (points: number) => void) => {
   const [state, setState] = useState<GameState>(() =>
     createInitialGameState(loadConfig(), true)
   );
@@ -427,8 +482,8 @@ const useKanjiGame = (onAwardPoints: (points: number) => void) => {
   const handleSubmit = () => {
     setState((prev) => {
       const next = submitSentence(prev);
-      if (next.submissionResult && next.submissionResult.pointsAwarded > 0) {
-        onAwardPoints(next.submissionResult.pointsAwarded);
+      if (next.submissionResult) {
+        onCompleteRound(next.submissionResult.pointsAwarded);
       }
       return next;
     });
@@ -436,14 +491,10 @@ const useKanjiGame = (onAwardPoints: (points: number) => void) => {
 
   const configProps = createConfigProps(state, setState);
 
-  const practiceProps: PracticeAreaProps = {
-    state,
-    charData,
-    totalStrokes,
-    usedTargetsCount,
-    hasWrittenAny,
-    onSelectTarget: (char) => setState((prev) => setSelectedChar(prev, char)),
-    onSelectCell: (idx) => setState((prev) => selectCell(prev, idx)),
+  const practiceHandlers = {
+    onSelectTarget: (char: string) =>
+      setState((prev) => setSelectedChar(prev, char)),
+    onSelectCell: (idx: number) => setState((prev) => selectCell(prev, idx)),
     onClearActiveCell: () =>
       setState((prev) => clearCell(prev, prev.activeCellIndex)),
     onSubmitSentence: handleSubmit,
@@ -459,14 +510,45 @@ const useKanjiGame = (onAwardPoints: (points: number) => void) => {
       setState((prev) => setSelectedTargetKanji(prev, null))
   };
 
-  return { state, setState, configProps, practiceProps };
+  return {
+    state,
+    setState,
+    charData,
+    totalStrokes,
+    usedTargetsCount,
+    hasWrittenAny,
+    configProps,
+    practiceHandlers
+  };
 };
 
 export const App = () => {
-  const { profile, onPurchase, onEquip, onAwardPoints } = useProfile();
-  const { state, setState, configProps, practiceProps } =
-    useKanjiGame(onAwardPoints);
+  const { profile, onPurchase, onEquip, onOpenBlindBox, onCompleteRound } =
+    useProfile();
+  const {
+    state,
+    setState,
+    charData,
+    totalStrokes,
+    usedTargetsCount,
+    hasWrittenAny,
+    configProps,
+    practiceHandlers
+  } = useKanjiGame(onCompleteRound);
   const equippedItem = resolveEquippedItem(profile.equippedItemId);
+
+  const practiceProps: PracticeAreaProps = {
+    state,
+    charData,
+    totalStrokes,
+    usedTargetsCount,
+    hasWrittenAny,
+    unopenedBoxesCount: profile.unopenedBoxesCount,
+    equippedItemId: profile.equippedItemId,
+    onOpenBlindBox,
+    onEquip,
+    ...practiceHandlers
+  };
 
   return (
     <main className="kanji-battle-app">
@@ -474,6 +556,7 @@ export const App = () => {
       <TabNavigation
         activeTab={state.activeTab}
         points={profile.points}
+        unopenedBoxesCount={profile.unopenedBoxesCount}
         equippedItem={equippedItem}
         onTabChange={(tab) => setState((prev) => switchTab(prev, tab))}
       />
@@ -483,6 +566,7 @@ export const App = () => {
         profile={profile}
         onPurchase={onPurchase}
         onEquip={onEquip}
+        onOpenBlindBox={onOpenBlindBox}
         configProps={configProps}
         practiceProps={practiceProps}
       />

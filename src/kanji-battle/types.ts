@@ -29,9 +29,16 @@ export interface ShopItem {
   readonly description: string;
 }
 
+export interface InventoryItem {
+  readonly id: string;
+  readonly count: number;
+}
+
 export interface PlayerProfile {
   readonly points: number;
   readonly purchasedItemIds: readonly string[];
+  readonly inventory: readonly InventoryItem[];
+  readonly unopenedBoxesCount: number;
   readonly equippedItemId: string | null;
 }
 
@@ -95,7 +102,7 @@ export interface KanjiConfig {
 }
 
 export interface GameState {
-  readonly activeTab: 'practice' | 'shop';
+  readonly activeTab: 'practice' | 'inventory' | 'shop';
   readonly isConfiguring: boolean;
   readonly config: KanjiConfig;
   readonly targetKanji: readonly TargetKanjiPrompt[];
