@@ -153,7 +153,12 @@ const renderCanvasContent = (
 
 const extractPoint = (e: PointerEvent, canvas: HTMLCanvasElement): Point => {
   const rect = canvas.getBoundingClientRect();
-  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  const scaleX = rect.width > 0 ? canvas.width / rect.width : 1;
+  const scaleY = rect.height > 0 ? canvas.height / rect.height : 1;
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top) * scaleY
+  };
 };
 
 const safeSetPointerCapture = (
@@ -190,6 +195,7 @@ const useCanvasDrawing = (
   const [isDrawing, setIsDrawing] = useState(false);
 
   const onDown = (e: PointerEvent) => {
+    e.preventDefault();
     safeSetPointerCapture(canvasRef.current, e.pointerId);
     setIsDrawing(true);
     setCurrentPoints([extractPoint(e, canvasRef.current!)]);

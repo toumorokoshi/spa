@@ -169,10 +169,38 @@ const WritingArenaSection = ({
   </section>
 );
 
-interface SentenceGridSectionProps {
+const computeSidebarClass = (isCollapsed: boolean): string =>
+  `practice-sidebar ${isCollapsed ? 'collapsed' : ''}`;
+
+const computeSidebarBodyClass = (isCollapsed: boolean): string =>
+  `sidebar-collapsible-body ${isCollapsed ? 'hidden' : ''}`;
+
+interface FoldSidebarButtonProps {
+  readonly isCollapsed: boolean;
+  readonly onToggle: () => void;
+}
+
+const FoldSidebarButton = ({
+  isCollapsed,
+  onToggle
+}: FoldSidebarButtonProps) => (
+  <button
+    type="button"
+    className="btn btn-secondary btn-sm sidebar-fold-btn"
+    onClick={onToggle}
+    aria-label={isCollapsed ? 'Expand info sidebar' : 'Fold info sidebar'}
+    title={isCollapsed ? 'Expand sidebar' : 'Fold sidebar'}
+  >
+    {isCollapsed ? '📖 Grid ▾' : '◀ Fold'}
+  </button>
+);
+
+interface PracticeSidebarProps {
   readonly state: GameState;
+  readonly isCollapsed: boolean;
   readonly usedTargetsCount: number;
   readonly hasWrittenAny: boolean;
+  readonly onToggleCollapse: () => void;
   readonly onOpenConfig: () => void;
   readonly onSelectTarget: (char: string) => void;
   readonly onSelectCell: (index: number) => void;
@@ -180,74 +208,95 @@ interface SentenceGridSectionProps {
   readonly onSubmitSentence: () => void;
 }
 
-const SentenceGridSection = ({
+const PracticeSidebar = ({
   state,
+  isCollapsed,
   usedTargetsCount,
   hasWrittenAny,
+  onToggleCollapse,
   onOpenConfig,
   onSelectTarget,
   onSelectCell,
   onClearActiveCell,
   onSubmitSentence
-}: SentenceGridSectionProps) => (
-  <>
-    <PracticeToolbar
-      selectedYear={state.config.selectedYear}
-      onOpenConfig={onOpenConfig}
-    />
-    <TargetKanjiBanner
-      targetKanji={state.targetKanji}
-      gridCells={state.gridCells}
-      selectedChar={state.selectedChar}
-      onSelectTarget={onSelectTarget}
-    />
-    <VerticalSentenceGrid
-      cells={state.gridCells}
-      activeCellIndex={state.activeCellIndex}
-      usedCount={usedTargetsCount}
-      totalTargets={state.targetKanji.length}
-      hasWrittenAny={hasWrittenAny}
-      onSelectCell={onSelectCell}
-      onClearActiveCell={onClearActiveCell}
-      onSubmitSentence={onSubmitSentence}
-    />
-  </>
+}: PracticeSidebarProps) => (
+  <aside
+    className={computeSidebarClass(isCollapsed)}
+    aria-label="Sentence Grid and Targets Sidebar"
+  >
+    <div className="sidebar-top-bar">
+      <PracticeToolbar
+        selectedYear={state.config.selectedYear}
+        onOpenConfig={onOpenConfig}
+      />
+      <FoldSidebarButton
+        isCollapsed={isCollapsed}
+        onToggle={onToggleCollapse}
+      />
+    </div>
+
+    <div className={computeSidebarBodyClass(isCollapsed)}>
+      <TargetKanjiBanner
+        targetKanji={state.targetKanji}
+        gridCells={state.gridCells}
+        selectedChar={state.selectedChar}
+        onSelectTarget={onSelectTarget}
+      />
+      <VerticalSentenceGrid
+        cells={state.gridCells}
+        activeCellIndex={state.activeCellIndex}
+        usedCount={usedTargetsCount}
+        totalTargets={state.targetKanji.length}
+        hasWrittenAny={hasWrittenAny}
+        onSelectCell={onSelectCell}
+        onClearActiveCell={onClearActiveCell}
+        onSubmitSentence={onSubmitSentence}
+      />
+    </div>
+  </aside>
 );
 
-const PracticeArea = ({
+interface PracticeWritingDeskProps {
+  readonly state: GameState;
+  readonly charData: CharacterData;
+  readonly totalStrokes: number;
+  readonly isSidebarCollapsed: boolean;
+  readonly usedTargetsCount: number;
+  readonly onExpandSidebar: () => void;
+  readonly onClearInk: () => void;
+  readonly onToggleGuide: () => void;
+  readonly onStroke: (pts: readonly Point[], w: number, h: number) => void;
+  readonly onSubmitCell: () => void;
+  readonly onSwitchToFreeform: () => void;
+}
+
+const PracticeWritingDesk = ({
   state,
   charData,
   totalStrokes,
+  isSidebarCollapsed,
   usedTargetsCount,
-  hasWrittenAny,
-  unopenedBoxesCount,
-  equippedItemId,
-  onOpenBlindBox,
-  onEquip,
-  onSelectTarget,
-  onSelectCell,
-  onClearActiveCell,
-  onSubmitSentence,
-  onStroke,
+  onExpandSidebar,
   onClearInk,
   onToggleGuide,
-  onOpenConfig,
-  onNextChallenge,
-  onCloseSubmission,
+  onStroke,
   onSubmitCell,
   onSwitchToFreeform
-}: PracticeAreaProps) => (
-  <div className="practice-container">
-    <SentenceGridSection
-      state={state}
-      usedTargetsCount={usedTargetsCount}
-      hasWrittenAny={hasWrittenAny}
-      onOpenConfig={onOpenConfig}
-      onSelectTarget={onSelectTarget}
-      onSelectCell={onSelectCell}
-      onClearActiveCell={onClearActiveCell}
-      onSubmitSentence={onSubmitSentence}
-    />
+}: PracticeWritingDeskProps) => (
+  <main className="practice-writing-desk" aria-label="Writing Desk Workspace">
+    {isSidebarCollapsed ? (
+      <div className="collapsed-pill-bar">
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm btn-reopen-sidebar"
+          onClick={onExpandSidebar}
+          aria-label={`Show Grid & Targets (${usedTargetsCount}/${state.targetKanji.length})`}
+        >
+          📖 Show Grid & Targets ({usedTargetsCount}/{state.targetKanji.length})
+          ▶
+        </button>
+      </div>
+    ) : null}
 
     <FeedbackBanner feedback={state.feedback} />
 
@@ -265,22 +314,87 @@ const PracticeArea = ({
       onSubmitCell={onSubmitCell}
       onSwitchToFreeform={onSwitchToFreeform}
     />
-
-    {state.submissionResult ? (
-      <SubmissionModal
-        result={state.submissionResult}
-        totalTargets={state.targetKanji.length}
-        unopenedBoxesCount={unopenedBoxesCount}
-        equippedItemId={equippedItemId}
-        onOpenBlindBox={onOpenBlindBox}
-        onEquip={onEquip}
-        onNextChallenge={onNextChallenge}
-        onReconfigure={onOpenConfig}
-        onClose={onCloseSubmission}
-      />
-    ) : null}
-  </div>
+  </main>
 );
+
+interface OptionalSubmissionModalProps {
+  readonly result: SubmissionResult | null;
+  readonly totalTargets: number;
+  readonly unopenedBoxesCount: number;
+  readonly equippedItemId: string | null;
+  readonly onOpenBlindBox: (item: ShopItem) => void;
+  readonly onEquip: (id: string) => void;
+  readonly onNextChallenge: () => void;
+  readonly onReconfigure: () => void;
+  readonly onClose: () => void;
+}
+
+const OptionalSubmissionModal = (props: OptionalSubmissionModalProps) => {
+  if (!props.result) return null;
+  return (
+    <SubmissionModal
+      result={props.result}
+      totalTargets={props.totalTargets}
+      unopenedBoxesCount={props.unopenedBoxesCount}
+      equippedItemId={props.equippedItemId}
+      onOpenBlindBox={props.onOpenBlindBox}
+      onEquip={props.onEquip}
+      onNextChallenge={props.onNextChallenge}
+      onReconfigure={props.onReconfigure}
+      onClose={props.onClose}
+    />
+  );
+};
+
+const PracticeArea = (props: PracticeAreaProps) => {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const containerClass = `practice-container ${
+    isSidebarCollapsed ? 'sidebar-collapsed' : 'with-sidebar'
+  }`;
+
+  return (
+    <div className={containerClass}>
+      <PracticeSidebar
+        state={props.state}
+        isCollapsed={isSidebarCollapsed}
+        usedTargetsCount={props.usedTargetsCount}
+        hasWrittenAny={props.hasWrittenAny}
+        onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
+        onOpenConfig={props.onOpenConfig}
+        onSelectTarget={props.onSelectTarget}
+        onSelectCell={props.onSelectCell}
+        onClearActiveCell={props.onClearActiveCell}
+        onSubmitSentence={props.onSubmitSentence}
+      />
+
+      <PracticeWritingDesk
+        state={props.state}
+        charData={props.charData}
+        totalStrokes={props.totalStrokes}
+        isSidebarCollapsed={isSidebarCollapsed}
+        usedTargetsCount={props.usedTargetsCount}
+        onExpandSidebar={() => setIsSidebarCollapsed(false)}
+        onClearInk={props.onClearInk}
+        onToggleGuide={props.onToggleGuide}
+        onStroke={props.onStroke}
+        onSubmitCell={props.onSubmitCell}
+        onSwitchToFreeform={props.onSwitchToFreeform}
+      />
+
+      <OptionalSubmissionModal
+        result={props.state.submissionResult}
+        totalTargets={props.state.targetKanji.length}
+        unopenedBoxesCount={props.unopenedBoxesCount}
+        equippedItemId={props.equippedItemId}
+        onOpenBlindBox={props.onOpenBlindBox}
+        onEquip={props.onEquip}
+        onNextChallenge={props.onNextChallenge}
+        onReconfigure={props.onOpenConfig}
+        onClose={props.onCloseSubmission}
+      />
+    </div>
+  );
+};
 
 const useProfile = () => {
   const [profile, setProfile] = useState<PlayerProfile>(loadProfile);

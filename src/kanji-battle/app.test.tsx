@@ -434,3 +434,35 @@ describe('App inventory tab viewing and equipping', () => {
     ).toContain('King Minifig');
   });
 });
+
+describe('Tablet layout and sidebar fold controls', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('allows folding and reopening the sidebar to maximize writing space', () => {
+    const rendered = render(<App />);
+    startPracticeSession(rendered);
+
+    expect(
+      rendered.getByRole('complementary', {
+        name: /sentence grid and targets sidebar/i
+      })
+    ).toBeTruthy();
+
+    const foldBtn = rendered.getByRole('button', {
+      name: /fold info sidebar/i
+    });
+    fireEvent.click(foldBtn);
+
+    const reopenBtn = rendered.getByRole('button', {
+      name: /show grid & targets/i
+    });
+    expect(reopenBtn).toBeTruthy();
+
+    fireEvent.click(reopenBtn);
+    expect(
+      rendered.getByRole('button', { name: /fold info sidebar/i })
+    ).toBeTruthy();
+  });
+});

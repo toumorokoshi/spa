@@ -12,6 +12,10 @@ Single-page app under `src/kanji-battle/`: an interactive Japanese sentence writ
 - **Blind Boxes**: Completing a practice round awards a mystery blind box. Players click the box to unbox a random collectible minifigure with pop-out reveal animations. Unboxed figures are added to the player's inventory, and duplicates increase the item's count badge.
 - **Minifigure Inventory**: A dedicated Inventory tab displays all purchased items and received minifigures with owned duplicate counts (`x1`, `x2`, etc.), total collection metrics, and equipping controls. Any unopened blind boxes can also be opened directly from the inventory.
 - **Minifigure Collection & Shop**: Features an expanded catalog of 24 brick companions (including Dinosaur 🦖, Ninja 🥷, King 👑, and Jester 🃏) that players can collect via blind boxes or purchase with practice points and equip in the header.
+- **Tablet-Friendly Form Factor**: Optimized for stylus handwriting on tablet devices (e.g. iPad with Apple Pencil):
+  - **Dominant Writing Desk**: The canvas and immediate character controls occupy the primary real estate of the screen, scaling up to 480px with high-resolution drawing buffers, accurate pointer capture, and ample wrist/palm resting margins.
+  - **Collapsible Reference Sidebar**: On tablet screens ($\ge 768\text{px}$), target kanji prompts and the 20-cell manuscript grid sit in a compact, sticky sidebar on the left so writers can reference their sentence while drawing.
+  - **Focus Mode & Narrow Top Fold**: The sidebar can be folded away at any time to grant 100% full-width real estate to the writing canvas with a reopen pill. On mobile viewports, the reference pane collapses into a narrow fold on top to avoid vertical scrolling.
 
 ## Configuration
 
