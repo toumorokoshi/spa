@@ -1,11 +1,5 @@
 import { useState } from 'preact/hooks';
-import {
-  APP_TITLE,
-  APP_SUBTITLE,
-  NAV_DIR_PREV,
-  NAV_DIR_NEXT
-} from './constants';
-import { SENTENCE_LIST } from './sentences-data';
+import { APP_TITLE, APP_SUBTITLE } from './constants';
 import { getCharacterData } from './character-data';
 import { matchStroke } from './stroke-matcher';
 import { SHOP_ITEMS, getShopItemById } from './shop-data';
@@ -14,24 +8,29 @@ import { loadProfile, saveProfile } from './profile-storage';
 import {
   createInitialGameState,
   processStrokeResult,
-  advanceSentence,
   resetCurrentCharacter,
   toggleGuide,
-  switchTab
+  switchTab,
+  selectCell,
+  setSelectedChar,
+  clearCell,
+  submitSentence,
+  startNewChallenge
 } from './game-logic';
 import { TabNavigation } from './components/tab-navigation';
 import { ShopView } from './components/shop-view';
-import { SentenceDisplay } from './components/sentence-display';
 import { CharacterStatus } from './components/character-status';
 import { WritingCanvas } from './components/writing-canvas';
-import { NavigationControls } from './components/navigation-controls';
+import { TargetKanjiBanner } from './components/target-kanji-banner';
+import { VerticalSentenceGrid } from './components/vertical-sentence-grid';
+import { CharacterPalette } from './components/character-palette';
+import { SubmissionModal } from './components/submission-modal';
 import {
   CharacterData,
   FeedbackState,
   GameState,
   PlayerProfile,
   Point,
-  SentencePrompt,
   ShopItem
 } from './types';
 
@@ -49,43 +48,72 @@ const FeedbackBanner = ({ feedback }: { readonly feedback: FeedbackState }) => (
 );
 
 interface PracticeAreaProps {
-  readonly sentence: SentencePrompt;
+  readonly state: GameState;
   readonly charData: CharacterData;
   readonly totalStrokes: number;
-  readonly state: GameState;
+  readonly usedTargetsCount: number;
+  readonly hasWrittenAny: boolean;
+  readonly onSelectTarget: (char: string) => void;
+  readonly onSelectCell: (index: number) => void;
+  readonly onClearActiveCell: () => void;
+  readonly onSubmitSentence: () => void;
   readonly onStroke: (pts: readonly Point[], w: number, h: number) => void;
-  readonly onClearCharacter: () => void;
+  readonly onClearInk: () => void;
   readonly onToggleGuide: () => void;
-  readonly onPrevSentence: () => void;
-  readonly onNextSentence: () => void;
+  readonly onNextChallenge: () => void;
+  readonly onCloseSubmission: () => void;
 }
 
 const PracticeArea = ({
-  sentence,
+  state,
   charData,
   totalStrokes,
-  state,
+  usedTargetsCount,
+  hasWrittenAny,
+  onSelectTarget,
+  onSelectCell,
+  onClearActiveCell,
+  onSubmitSentence,
   onStroke,
-  onClearCharacter,
+  onClearInk,
   onToggleGuide,
-  onPrevSentence,
-  onNextSentence
+  onNextChallenge,
+  onCloseSubmission
 }: PracticeAreaProps) => (
   <div className="practice-container">
-    <SentenceDisplay
-      sentence={sentence}
-      currentCharIndex={state.charIndex}
-      isSentenceComplete={state.isSentenceComplete}
+    <TargetKanjiBanner
+      targetKanji={state.targetKanji}
+      gridCells={state.gridCells}
+      selectedChar={state.selectedChar}
+      onSelectTarget={onSelectTarget}
     />
+
+    <VerticalSentenceGrid
+      cells={state.gridCells}
+      activeCellIndex={state.activeCellIndex}
+      usedCount={usedTargetsCount}
+      totalTargets={state.targetKanji.length}
+      hasWrittenAny={hasWrittenAny}
+      onSelectCell={onSelectCell}
+      onClearActiveCell={onClearActiveCell}
+      onSubmitSentence={onSubmitSentence}
+    />
+
+    <CharacterPalette
+      targetKanji={state.targetKanji}
+      selectedChar={state.selectedChar}
+      onSelectChar={onSelectTarget}
+    />
+
     <FeedbackBanner feedback={state.feedback} />
+
     <section className="writing-section" aria-label="Writing Arena">
       <CharacterStatus
         character={charData}
         completedCount={state.completedStrokeIndices.length}
         totalStrokes={totalStrokes}
         showGuide={state.showGuide}
-        isSentenceComplete={state.isSentenceComplete}
-        onClearCharacter={onClearCharacter}
+        onClearCharacter={onClearInk}
         onToggleGuide={onToggleGuide}
       />
       <WritingCanvas
@@ -95,13 +123,15 @@ const PracticeArea = ({
         onStrokeFinished={onStroke}
       />
     </section>
-    <NavigationControls
-      currentSentenceIndex={state.sentenceIndex}
-      totalSentences={SENTENCE_LIST.length}
-      isSentenceComplete={state.isSentenceComplete}
-      onPreviousSentence={onPrevSentence}
-      onNextSentence={onNextSentence}
-    />
+
+    {state.submissionResult ? (
+      <SubmissionModal
+        result={state.submissionResult}
+        totalTargets={state.targetKanji.length}
+        onNextChallenge={onNextChallenge}
+        onClose={onCloseSubmission}
+      />
+    ) : null}
   </div>
 );
 
@@ -140,9 +170,6 @@ const resolveEquippedItem = (id: string | null): ShopItem | null => {
   return getShopItemById(id) ?? null;
 };
 
-const getCurrentChar = (sentence: SentencePrompt, charIndex: number): string =>
-  sentence.text[charIndex] ?? sentence.text[0];
-
 interface ActiveViewProps {
   readonly activeTab: 'practice' | 'shop';
   readonly profile: PlayerProfile;
@@ -171,18 +198,24 @@ const ActiveView = ({
   return <PracticeArea {...practiceProps} />;
 };
 
-export const App = () => {
-  const [state, setState] = useState<GameState>(createInitialGameState);
-  const { profile, onPurchase, onEquip, onAwardPoints } = useProfile();
+const computeGridStats = (state: GameState) => {
+  const writtenChars = state.gridCells
+    .map((c) => c.char)
+    .filter((c): c is string => c !== null);
+  const usedTargetsCount = state.targetKanji.filter((t) =>
+    writtenChars.includes(t.char)
+  ).length;
+  const hasWrittenAny = writtenChars.length > 0;
+  return { usedTargetsCount, hasWrittenAny };
+};
 
-  const currentSentence = SENTENCE_LIST[state.sentenceIndex];
-  const currentChar = getCurrentChar(currentSentence, state.charIndex);
-  const charData = getCharacterData(currentChar);
+const useKanjiGame = (onAwardPoints: (points: number) => void) => {
+  const [state, setState] = useState<GameState>(createInitialGameState);
+  const charData = getCharacterData(state.selectedChar);
   const totalStrokes = charData.strokes.length;
-  const equippedItem = resolveEquippedItem(profile.equippedItemId);
+  const { usedTargetsCount, hasWrittenAny } = computeGridStats(state);
 
   const handleStroke = (pts: readonly Point[], w: number, h: number) => {
-    if (state.isSentenceComplete) return;
     const res = matchStroke(
       pts,
       w,
@@ -190,37 +223,45 @@ export const App = () => {
       charData.strokes,
       state.completedStrokeIndices.length
     );
+    setState((prev) => processStrokeResult(prev, res, totalStrokes));
+  };
+
+  const handleSubmit = () => {
     setState((prev) => {
-      const next = processStrokeResult(
-        prev,
-        res,
-        totalStrokes,
-        currentSentence.text.length
-      );
-      if (next.isSentenceComplete && !prev.isSentenceComplete) {
-        onAwardPoints(currentSentence.points);
+      const next = submitSentence(prev);
+      if (next.submissionResult && next.submissionResult.pointsAwarded > 0) {
+        onAwardPoints(next.submissionResult.pointsAwarded);
       }
       return next;
     });
   };
 
   const practiceProps: PracticeAreaProps = {
-    sentence: currentSentence,
+    state,
     charData,
     totalStrokes,
-    state,
+    usedTargetsCount,
+    hasWrittenAny,
+    onSelectTarget: (char) => setState((prev) => setSelectedChar(prev, char)),
+    onSelectCell: (idx) => setState((prev) => selectCell(prev, idx)),
+    onClearActiveCell: () =>
+      setState((prev) => clearCell(prev, prev.activeCellIndex)),
+    onSubmitSentence: handleSubmit,
     onStroke: handleStroke,
-    onClearCharacter: () => setState(resetCurrentCharacter),
+    onClearInk: () => setState(resetCurrentCharacter),
     onToggleGuide: () => setState(toggleGuide),
-    onPrevSentence: () =>
-      setState((prev) =>
-        advanceSentence(prev, NAV_DIR_PREV, SENTENCE_LIST.length)
-      ),
-    onNextSentence: () =>
-      setState((prev) =>
-        advanceSentence(prev, NAV_DIR_NEXT, SENTENCE_LIST.length)
-      )
+    onNextChallenge: () => setState((prev) => startNewChallenge(prev)),
+    onCloseSubmission: () =>
+      setState((prev) => ({ ...prev, submissionResult: null }))
   };
+
+  return { state, setState, practiceProps };
+};
+
+export const App = () => {
+  const { profile, onPurchase, onEquip, onAwardPoints } = useProfile();
+  const { state, setState, practiceProps } = useKanjiGame(onAwardPoints);
+  const equippedItem = resolveEquippedItem(profile.equippedItemId);
 
   return (
     <main className="kanji-battle-app">

@@ -51,12 +51,35 @@ export interface FeedbackState {
   readonly message: string;
 }
 
+export interface TargetKanjiPrompt {
+  readonly char: string;
+  readonly reading: string;
+  readonly meaning: string;
+}
+
+export interface GridCell {
+  readonly index: number;
+  readonly column: number;
+  readonly row: number;
+  readonly char: string | null;
+  readonly isTargetKanji: boolean;
+}
+
+export interface SentenceSubmissionResult {
+  readonly usedTargetKanji: readonly string[];
+  readonly unusedTargetKanji: readonly string[];
+  readonly pointsAwarded: number;
+  readonly sentenceText: string;
+}
+
 export interface GameState {
   readonly activeTab: 'practice' | 'shop';
-  readonly sentenceIndex: number;
-  readonly charIndex: number;
+  readonly targetKanji: readonly TargetKanjiPrompt[];
+  readonly gridCells: readonly GridCell[];
+  readonly activeCellIndex: number;
+  readonly selectedChar: string;
   readonly completedStrokeIndices: readonly number[];
   readonly feedback: FeedbackState;
   readonly showGuide: boolean;
-  readonly isSentenceComplete: boolean;
+  readonly submissionResult: SentenceSubmissionResult | null;
 }

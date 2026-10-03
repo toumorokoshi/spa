@@ -6,7 +6,7 @@ interface CharacterStatusProps {
   readonly completedCount: number;
   readonly totalStrokes: number;
   readonly showGuide: boolean;
-  readonly isSentenceComplete: boolean;
+  readonly isCompleted?: boolean;
   readonly onClearCharacter: () => void;
   readonly onToggleGuide: () => void;
 }
@@ -44,16 +44,16 @@ export const CharacterStatus = ({
   completedCount,
   totalStrokes,
   showGuide,
-  isSentenceComplete,
+  isCompleted = false,
   onClearCharacter,
   onToggleGuide
 }: CharacterStatusProps) => {
-  const isCharDone = isSentenceComplete || completedCount >= totalStrokes;
+  const isCharDone = isCompleted || completedCount >= totalStrokes;
   const displayChar = computeDisplayChar(character.char, isCharDone);
   const currentStrokeNumber = Math.min(totalStrokes, completedCount + 1);
   const meaningText = formatMeaningText(character.reading, character.meaning);
   const strokeText = formatStrokeCounter(
-    isSentenceComplete,
+    isCompleted,
     currentStrokeNumber,
     totalStrokes
   );

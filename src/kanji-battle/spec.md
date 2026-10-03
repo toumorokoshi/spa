@@ -18,11 +18,14 @@ The points are stored in local storage, so the user can return to their session.
 
 ## Game modes
 
-### Point values
-
 ### Writing sentences
 
-One of the mechanics is writing a sentence. A prompt shows up with a sentence in Japaneese. The player must write the sentence by writing the strokes.
+One of the mechanics is writing a sentence. The player must come up with it themselves.
+
+- The user is given 5 different kanji that they must use, written in hiragana.
+- The player is shown a grid to write a sentence. The sentence is written top down, and right to left, in the same fashion that Japanese is typically written.
+- The player writes a sentence.
+- After the player is finished writing sentences, the player submits them, and is scored based on the number of kanji that they have used from the list given.
 
 The player should have to write the kanji from memory. showing the sentence in hiragana to the user is fine.
 
@@ -37,4 +40,8 @@ accept the answer.
 
 ## Configuration
 
-For configuration, there is a constants file that contains all of the Kanji that can be use to construct a sentence. These are the only kanji that can be used.
+For configuration, before the a game mode begins, the user may select first the year of the kanji they want to practice, and then can select the specific kanji they want to practice for this session. The workflow is:
+
+1. select the year of kanji.
+2. select the kanji to practice.
+3. start the game.

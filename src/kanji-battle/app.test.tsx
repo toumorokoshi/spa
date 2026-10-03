@@ -1,46 +1,62 @@
 import { render, fireEvent } from '@testing-library/preact';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { App } from './app';
-import { APP_TITLE } from './constants';
-import { SENTENCE_LIST } from './sentences-data';
+import {
+  APP_TITLE,
+  SHOP_PRICE_TIER_1,
+  SHOP_PRICE_TIER_3,
+  STORAGE_PROFILE_KEY
+} from './constants';
 
-describe('App rendering and navigation', () => {
-  it('renders heading, prompt, character tiles, and canvas', () => {
-    const { getByText, getByRole, getByLabelText } = render(<App />);
-    expect(getByText(APP_TITLE)).toBeTruthy();
-    expect(getByText(SENTENCE_LIST[0].english)).toBeTruthy();
-    expect(getByRole('region', { name: /writing arena/i })).toBeTruthy();
-    expect(getByLabelText(/stylus handwriting practice canvas/i)).toBeTruthy();
-    expect(getByRole('button', { name: /previous sentence/i })).toBeTruthy();
-    expect(getByRole('button', { name: /next sentence/i })).toBeTruthy();
+describe('App rendering and challenge display', () => {
+  beforeEach(() => {
+    localStorage.clear();
   });
 
-  it('cycles to the next sentence when clicking next', () => {
-    const { getByRole, getByText } = render(<App />);
-    const nextBtn = getByRole('button', { name: /next sentence/i });
-    fireEvent.click(nextBtn);
+  it('renders brand heading, 5 target kanji in hiragana, and vertical grid', () => {
+    const { getByText, getAllByText, getByRole, getByLabelText } = render(
+      <App />
+    );
+    expect(getByText(APP_TITLE)).toBeTruthy();
+    expect(
+      getByRole('region', { name: /required target kanji/i })
+    ).toBeTruthy();
+    expect(
+      getByRole('region', { name: /japanese vertical writing grid/i })
+    ).toBeTruthy();
+    expect(getByRole('region', { name: /character selection/i })).toBeTruthy();
+    expect(getByRole('region', { name: /writing arena/i })).toBeTruthy();
+    expect(getByLabelText(/stylus handwriting practice canvas/i)).toBeTruthy();
 
-    expect(getByText(SENTENCE_LIST[1].english)).toBeTruthy();
-    expect(getByText('Sentence 2 of 6')).toBeTruthy();
+    // Challenge shows 5 target kanji in hiragana readings
+    expect(getAllByText('ひ').length).toBeGreaterThan(0);
+    expect(getAllByText('やま').length).toBeGreaterThan(0);
+    expect(getAllByText('き').length).toBeGreaterThan(0);
+    expect(getAllByText('みず').length).toBeGreaterThan(0);
+  });
+
+  it('masks kanji on writing arena while showing reading and meaning', () => {
+    const { container, getByText } = render(<App />);
+    const bigChar = container.querySelector('.big-char');
+    expect(bigChar?.textContent).toBe('?');
+    expect(getByText(/\[ひ\] Sun \/ Day/)).toBeTruthy();
   });
 });
 
-describe('App memory writing mode and canvas interaction', () => {
-  it('masks kanji for memory recall while displaying hiragana and readings', () => {
-    const { container, getByText } = render(<App />);
-    // Sentence 0: 日は山から出る -> Kanji (日, 山, 出) should be masked as '?' until written
-    // Hiragana (は, か, ら, る) should be visible
-    expect(getByText('は')).toBeTruthy();
-    expect(getByText('か')).toBeTruthy();
-    expect(getByText('ら')).toBeTruthy();
-    expect(getByText('る')).toBeTruthy();
+describe('App interactions and canvas writing', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
 
-    // Check that target badge shows '?' for uncompleted kanji '日'
-    const bigChar = container.querySelector('.big-char');
-    expect(bigChar?.textContent).toBe('?');
+  it('selects cells and changes character from palette', () => {
+    const { getByRole, getByText } = render(<App />);
+    const cell2 = getByRole('gridcell', { name: /cell 2/i });
+    fireEvent.click(cell2);
 
-    // Shows reading in hiragana and meaning
-    expect(getByText(/\[ひ\] Sun \/ Day/)).toBeTruthy();
+    const kanaChip = getByRole('button', { name: /select kana は/i });
+    fireEvent.click(kanaChip);
+
+    expect(getByText(/Topic marker \(ha\)/)).toBeTruthy();
   });
 
   it('toggles hint visibility when clicking toggle hint button', () => {
@@ -68,10 +84,15 @@ describe('App memory writing mode and canvas interaction', () => {
 });
 
 describe('App tabs and shop view interactions', () => {
-  it('switches between practice and minifig shop tabs', () => {
+  beforeEach(() => {
     localStorage.clear();
-    const { getByRole, getByText, queryByText } = render(<App />);
-    expect(getByText(/Sentence 1 of 6/)).toBeTruthy();
+  });
+
+  it('switches between practice and minifig shop tabs', () => {
+    const { getByRole, queryByRole } = render(<App />);
+    expect(
+      getByRole('region', { name: /japanese vertical writing grid/i })
+    ).toBeTruthy();
 
     const shopTabBtn = getByRole('button', { name: /minifig shop/i });
     fireEvent.click(shopTabBtn);
@@ -79,20 +100,23 @@ describe('App tabs and shop view interactions', () => {
     expect(
       getByRole('heading', { name: /lego minifigure shop/i })
     ).toBeTruthy();
-    expect(queryByText(/Sentence 1 of 6/)).toBeNull();
+    expect(
+      queryByRole('region', { name: /japanese vertical writing grid/i })
+    ).toBeNull();
 
     const practiceTabBtn = getByRole('button', { name: /practice/i });
     fireEvent.click(practiceTabBtn);
 
-    expect(getByText(/Sentence 1 of 6/)).toBeTruthy();
+    expect(
+      getByRole('region', { name: /japanese vertical writing grid/i })
+    ).toBeTruthy();
   });
 
   it('displays minifigures in the shop and allows buying when funded', () => {
-    localStorage.clear();
     localStorage.setItem(
-      'kanji-battle:profile',
+      STORAGE_PROFILE_KEY,
       JSON.stringify({
-        points: 200,
+        points: SHOP_PRICE_TIER_3,
         purchasedItemIds: [],
         equippedItemId: null
       })
@@ -102,10 +126,19 @@ describe('App tabs and shop view interactions', () => {
     fireEvent.click(getByRole('button', { name: /minifig shop/i }));
 
     expect(getByText('Ninja Minifig')).toBeTruthy();
-    const buyBtn = getByRole('button', { name: /buy for 100 pts/i });
+    const buyBtn = getByRole('button', {
+      name: new RegExp(`buy for ${SHOP_PRICE_TIER_1} pts`, 'i')
+    });
     fireEvent.click(buyBtn);
 
     expect(getByText('Equipped')).toBeTruthy();
-    expect(getByLabelText(/points balance: 100/i)).toBeTruthy();
+    expect(
+      getByLabelText(
+        new RegExp(
+          `points balance: ${SHOP_PRICE_TIER_3 - SHOP_PRICE_TIER_1}`,
+          'i'
+        )
+      )
+    ).toBeTruthy();
   });
 });

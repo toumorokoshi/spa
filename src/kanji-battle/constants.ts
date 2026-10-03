@@ -66,3 +66,28 @@ export const ALLOWED_SENTENCE_KANJI = [
 
 export const ALLOWED_KANJI = ALLOWED_SENTENCE_KANJI;
 export type AllowedKanji = (typeof ALLOWED_SENTENCE_KANJI)[number];
+
+export const TARGET_KANJI_COUNT = 5;
+export const POINTS_PER_TARGET_KANJI = 50;
+export const ALL_TARGETS_BONUS_POINTS = 50;
+
+export const GRID_COLUMNS = 3;
+export const GRID_ROWS = 6;
+export const TOTAL_GRID_CELLS = 18;
+
+export const AVAILABLE_KANA = [
+  'は',
+  'の',
+  'に',
+  'と',
+  'を',
+  'か',
+  'ら',
+  'る',
+  'き',
+  'な',
+  'く',
+  'も'
+] as const;
+
+export const DEFAULT_CHALLENGE_KANJI = ['日', '山', '木', '水', '火'] as const;

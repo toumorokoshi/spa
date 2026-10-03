@@ -4,10 +4,11 @@ Single-page app under `src/kanji-battle/`: an interactive Japanese sentence writ
 
 ## Features
 
-- **Sentence Writing Practice**: Practice writing Japanese sentences character by character with real-time stylus stroke tracking and stroke order validation.
-- **Memory Recall**: Kanji characters are masked with placeholders so players must recall them from memory, while phonetic hiragana readings and English meanings are provided as hints.
-- **Scoring Points**: Completing sentences awards points (`+50 pts` for short, `+75 pts` for medium, `+100 pts` for long sentences). Points persist across sessions in local storage.
-- **Minifigure Shop**: Players can spend accumulated points to unlock and equip collectible LEGO minifigure companions (e.g. Ninja, Samurai, Astronaut, Wizard, Robot, Knight) that appear in the app header.
+- **Free Sentence Writing Mode**: Players compose their own Japanese sentences in an authentic manuscript grid written top-to-bottom and right-to-left (縦書き).
+- **5-Kanji Challenge in Hiragana**: Each challenge provides 5 target kanji shown exclusively in hiragana readings and English meanings, challenging the player to recall and write each kanji from memory.
+- **Stroke Order & Geometry Validation**: Real-time handwriting recognition verifies each stroke shape and enforces correct stroke order with immediate interactive feedback.
+- **Submission Scoring & Point Rewards**: Players submit their completed sentence and receive points based on how many of the 5 target kanji were used (`+50 pts` per target kanji, plus full completion bonus). Points persist in `localStorage`.
+- **Minifigure Shop**: Players can spend accumulated points to unlock and equip collectible LEGO minifigure companions that appear in the app header.
 
 ## Configuration
 
