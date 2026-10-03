@@ -1,9 +1,35 @@
-import { SentenceSubmissionResult } from '../types';
+import { CellEvaluation, SentenceSubmissionResult } from '../types';
 
 interface StatsProps {
   readonly result: SentenceSubmissionResult;
   readonly totalTargets: number;
 }
+
+const CellEvaluationsBreakdown = ({
+  evaluations
+}: {
+  readonly evaluations: readonly CellEvaluation[];
+}) => {
+  if (evaluations.length === 0) return null;
+  return (
+    <div className="evaluations-breakdown">
+      <p className="evaluations-title">Characters Evaluated:</p>
+      <div className="evaluations-chips">
+        {evaluations.map((ev) => (
+          <span
+            key={ev.cellIndex}
+            className={`eval-chip ${ev.isTargetKanji ? 'eval-kanji' : 'eval-kana'}`}
+          >
+            <span className="chip-cell">#{ev.cellIndex + 1}</span>
+            <span className="chip-char">
+              {ev.char ?? ev.recognizedKana ?? '✏️'}
+            </span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const SubmissionStats = ({ result, totalTargets }: StatsProps) => (
   <div className="submission-details">
@@ -34,6 +60,8 @@ const SubmissionStats = ({ result, totalTargets }: StatsProps) => (
         your next sentence!
       </p>
     )}
+
+    <CellEvaluationsBreakdown evaluations={result.cellEvaluations ?? []} />
   </div>
 );
 

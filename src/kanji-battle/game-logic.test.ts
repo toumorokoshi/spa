@@ -34,7 +34,10 @@ import {
   openConfiguration,
   closeConfiguration,
   updateConfig,
-  startGameWithConfig
+  startGameWithConfig,
+  addFreeformStroke,
+  submitActiveCell,
+  setSelectedTargetKanji
 } from './game-logic';
 
 describe('grid and target challenge initialization', () => {
@@ -260,8 +263,30 @@ describe('kanji game state transitions with configuration', () => {
     expect(started.targetKanji.map((t) => t.char)).toEqual(
       year2Config.selectedKanji
     );
-    expect(started.selectedChar).toBe('行');
+    expect(started.selectedChar).toBeNull();
+    expect(started.activeMode).toBe('freeform');
     expect(started.gridCells.length).toBe(TOTAL_GRID_CELLS);
+
+    const kanjiSelected = setSelectedTargetKanji(started, '行');
+    expect(kanjiSelected.selectedChar).toBe('行');
+    expect(kanjiSelected.activeMode).toBe('kanji');
+  });
+
+  it('supports freeform stroke drawing and cell submission without prior character selection', () => {
+    const state = createInitialGameState();
+    const started = startGameWithConfig(state, state.config);
+    expect(started.activeMode).toBe('freeform');
+
+    const withStroke = addFreeformStroke(started, [
+      { x: 10, y: 10 },
+      { x: 20, y: 20 }
+    ]);
+    expect(withStroke.freeformStrokes.length).toBe(1);
+
+    const submitted = submitActiveCell(withStroke);
+    expect(submitted.activeCellIndex).toBe(1);
+    expect(submitted.gridCells[0].strokes?.length).toBe(1);
+    expect(submitted.gridCells[0].char).toBeNull();
   });
 
   it('allows opening, closing, and updating configuration state', () => {

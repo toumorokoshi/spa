@@ -13,9 +13,11 @@ import {
 import { Point, Stroke } from '../types';
 
 interface WritingCanvasProps {
-  readonly targetStrokes: readonly Stroke[];
-  readonly completedStrokeIndices: readonly number[];
-  readonly showGuide: boolean;
+  readonly mode: 'freeform' | 'kanji';
+  readonly targetStrokes?: readonly Stroke[];
+  readonly completedStrokeIndices?: readonly number[];
+  readonly freeformStrokes?: readonly Stroke[];
+  readonly showGuide?: boolean;
   readonly onStrokeFinished: (
     points: readonly Point[],
     width: number,
@@ -94,32 +96,47 @@ const drawActiveStroke = (
 
 const renderCanvasContent = (
   ctx: CanvasRenderingContext2D,
+  mode: 'freeform' | 'kanji',
   targetStrokes: readonly Stroke[],
   completedStrokeIndices: readonly number[],
+  freeformStrokes: readonly Stroke[],
   showGuide: boolean,
   currentPoints: readonly Point[]
 ): void => {
   ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
   drawGrid(ctx, CANVAS_SIZE);
 
-  if (showGuide) {
-    targetStrokes.forEach((stroke, idx) => {
-      if (!completedStrokeIndices.includes(idx)) {
+  if (mode === 'kanji') {
+    if (showGuide) {
+      targetStrokes.forEach((stroke, idx) => {
+        if (!completedStrokeIndices.includes(idx)) {
+          drawStrokePath(
+            ctx,
+            stroke,
+            CANVAS_SIZE,
+            '#475569',
+            GUIDE_STROKE_WIDTH,
+            true
+          );
+        }
+      });
+    }
+
+    completedStrokeIndices.forEach((idx) => {
+      const stroke = targetStrokes[idx];
+      if (stroke) {
         drawStrokePath(
           ctx,
           stroke,
           CANVAS_SIZE,
-          '#475569',
-          GUIDE_STROKE_WIDTH,
-          true
+          '#f8fafc',
+          INK_STROKE_WIDTH,
+          false
         );
       }
     });
-  }
-
-  completedStrokeIndices.forEach((idx) => {
-    const stroke = targetStrokes[idx];
-    if (stroke) {
+  } else {
+    freeformStrokes.forEach((stroke) => {
       drawStrokePath(
         ctx,
         stroke,
@@ -128,8 +145,8 @@ const renderCanvasContent = (
         INK_STROKE_WIDTH,
         false
       );
-    }
-  });
+    });
+  }
 
   drawActiveStroke(ctx, currentPoints);
 };
@@ -165,29 +182,12 @@ const safeReleasePointerCapture = (
   }
 };
 
-export const WritingCanvas = ({
-  targetStrokes,
-  completedStrokeIndices,
-  showGuide,
-  onStrokeFinished
-}: WritingCanvasProps) => {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+const useCanvasDrawing = (
+  canvasRef: { readonly current: HTMLCanvasElement | null },
+  onStrokeFinished: (pts: readonly Point[], w: number, h: number) => void
+) => {
   const [currentPoints, setCurrentPoints] = useState<readonly Point[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    renderCanvasContent(
-      ctx,
-      targetStrokes,
-      completedStrokeIndices,
-      showGuide,
-      currentPoints
-    );
-  }, [targetStrokes, completedStrokeIndices, showGuide, currentPoints]);
 
   const onDown = (e: PointerEvent) => {
     safeSetPointerCapture(canvasRef.current, e.pointerId);
@@ -209,6 +209,46 @@ export const WritingCanvas = ({
     }
     setCurrentPoints([]);
   };
+
+  return { currentPoints, onDown, onMove, onUp };
+};
+
+export const WritingCanvas = ({
+  mode,
+  targetStrokes = [],
+  completedStrokeIndices = [],
+  freeformStrokes = [],
+  showGuide = false,
+  onStrokeFinished
+}: WritingCanvasProps) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const { currentPoints, onDown, onMove, onUp } = useCanvasDrawing(
+    canvasRef,
+    onStrokeFinished
+  );
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    renderCanvasContent(
+      ctx,
+      mode,
+      targetStrokes,
+      completedStrokeIndices,
+      freeformStrokes,
+      showGuide,
+      currentPoints
+    );
+  }, [
+    mode,
+    targetStrokes,
+    completedStrokeIndices,
+    freeformStrokes,
+    showGuide,
+    currentPoints
+  ]);
 
   return (
     <div className="canvas-wrapper">

@@ -1,7 +1,7 @@
 import { getCharacterData } from './character-data';
 import {
   ALL_TARGETS_BONUS_POINTS,
-  DEFAULT_CHALLENGE_KANJI,
+  AVAILABLE_KANA,
   DEFAULT_SELECTED_YEAR,
   FIRST_INDEX,
   GRID_COLUMNS,
@@ -12,12 +12,15 @@ import {
   TARGET_KANJI_COUNT
 } from './constants';
 import { createDefaultConfig } from './config-storage';
+import { recognizeKanaFromStrokes } from './stroke-matcher';
 import {
+  CellEvaluation,
   GameState,
   GridCell,
   KanjiConfig,
   KanjiYearOption,
   SentenceSubmissionResult,
+  Stroke,
   StrokeMatchResult,
   TargetKanjiPrompt
 } from './types';
@@ -67,8 +70,6 @@ export const createInitialGameState = (
 ): GameState => {
   const config = resolveInitialConfig(initialParam);
   const targetKanji = buildTargetKanjiPrompts(config.selectedKanji);
-  const firstChar =
-    targetKanji[FIRST_INDEX]?.char ?? DEFAULT_CHALLENGE_KANJI[FIRST_INDEX];
 
   return {
     activeTab: 'practice',
@@ -77,12 +78,14 @@ export const createInitialGameState = (
     targetKanji,
     gridCells: initGridCells(),
     activeCellIndex: FIRST_INDEX,
-    selectedChar: firstChar,
+    selectedChar: null,
+    activeMode: 'freeform',
+    freeformStrokes: [],
     completedStrokeIndices: [],
     feedback: {
       type: 'info',
       message:
-        'Choose a target kanji or kana, then write it in the active grid cell.'
+        'Write hiragana freely in the active cell, or select a target kanji to write it from memory.'
     },
     showGuide: false,
     submissionResult: null
@@ -97,9 +100,33 @@ export const switchTab = (
   activeTab: tab
 });
 
-export const selectCell = (state: GameState, cellIndex: number): GameState => ({
+const selectTargetKanjiCell = (
+  state: GameState,
+  cellIndex: number,
+  char: string
+): GameState => ({
   ...state,
   activeCellIndex: cellIndex,
+  activeMode: 'kanji',
+  selectedChar: char,
+  freeformStrokes: [],
+  completedStrokeIndices: [],
+  feedback: {
+    type: 'info',
+    message: `Cell ${cellIndex + 1} selected with target kanji "${char}".`
+  }
+});
+
+const selectFreeformCell = (
+  state: GameState,
+  cellIndex: number,
+  cellStrokes: readonly Stroke[] | undefined
+): GameState => ({
+  ...state,
+  activeCellIndex: cellIndex,
+  activeMode: 'freeform',
+  selectedChar: null,
+  freeformStrokes: cellStrokes ?? [],
   completedStrokeIndices: [],
   feedback: {
     type: 'info',
@@ -107,43 +134,181 @@ export const selectCell = (state: GameState, cellIndex: number): GameState => ({
   }
 });
 
-export const setSelectedChar = (state: GameState, char: string): GameState => ({
-  ...state,
-  selectedChar: char,
-  completedStrokeIndices: [],
-  feedback: {
-    type: 'info',
-    message: `Selected "${char}". Draw its strokes on the canvas.`
+export const selectCell = (state: GameState, cellIndex: number): GameState => {
+  const targetCell = state.gridCells[cellIndex];
+  if (targetCell?.isTargetKanji && targetCell.char) {
+    return selectTargetKanjiCell(state, cellIndex, targetCell.char);
   }
-});
+  return selectFreeformCell(state, cellIndex, targetCell?.strokes);
+};
+
+export const setSelectedTargetKanji = (
+  state: GameState,
+  char: string | null
+): GameState => {
+  if (!char || (state.activeMode === 'kanji' && state.selectedChar === char)) {
+    return {
+      ...state,
+      activeMode: 'freeform',
+      selectedChar: null,
+      completedStrokeIndices: [],
+      feedback: {
+        type: 'info',
+        message: 'Freeform mode: write hiragana without specifying character.'
+      }
+    };
+  }
+  return {
+    ...state,
+    activeMode: 'kanji',
+    selectedChar: char,
+    completedStrokeIndices: [],
+    feedback: {
+      type: 'info',
+      message: `Selected "${char}". Write it from memory on the canvas.`
+    }
+  };
+};
+
+export const setSelectedChar = (state: GameState, char: string): GameState =>
+  setSelectedTargetKanji(state, char);
 
 const updateGridCell = (
   cells: readonly GridCell[],
   targetIndex: number,
   char: string | null,
-  isTargetKanji: boolean
+  isTargetKanji: boolean,
+  strokes?: readonly Stroke[]
 ): readonly GridCell[] =>
   cells.map((cell) =>
-    cell.index === targetIndex ? { ...cell, char, isTargetKanji } : cell
+    cell.index === targetIndex
+      ? { ...cell, char, isTargetKanji, strokes }
+      : cell
   );
 
-export const clearCell = (state: GameState, cellIndex: number): GameState => ({
+export const addFreeformStroke = (
+  state: GameState,
+  stroke: Stroke
+): GameState => ({
   ...state,
-  gridCells: updateGridCell(state.gridCells, cellIndex, null, false),
-  completedStrokeIndices: [],
+  freeformStrokes: [...state.freeformStrokes, stroke],
   feedback: {
     type: 'info',
-    message: `Cell ${cellIndex + 1} cleared.`
+    message: 'Stroke added. Draw more or hit Submit Character to advance.'
   }
 });
 
+const getNextCellStrokes = (
+  cells: readonly GridCell[],
+  index: number
+): readonly Stroke[] => cells[index]?.strokes ?? [];
+
+const submitFreeformCell = (
+  state: GameState,
+  nextCellIndex: number
+): GameState => {
+  const nextStrokes = getNextCellStrokes(state.gridCells, nextCellIndex);
+  if (state.freeformStrokes.length === 0) {
+    return {
+      ...state,
+      activeCellIndex: nextCellIndex,
+      freeformStrokes: nextStrokes
+    };
+  }
+  const updatedCells = updateGridCell(
+    state.gridCells,
+    state.activeCellIndex,
+    null,
+    false,
+    state.freeformStrokes
+  );
+  return {
+    ...state,
+    gridCells: updatedCells,
+    activeCellIndex: nextCellIndex,
+    activeMode: 'freeform',
+    selectedChar: null,
+    freeformStrokes: nextStrokes,
+    completedStrokeIndices: [],
+    feedback: {
+      type: 'success',
+      message: `Cell ${state.activeCellIndex + 1} saved! Onto next cell.`
+    }
+  };
+};
+
+const submitKanjiCell = (
+  state: GameState,
+  char: string,
+  nextCellIndex: number
+): GameState => {
+  const charData = getCharacterData(char);
+  const updatedCells = updateGridCell(
+    state.gridCells,
+    state.activeCellIndex,
+    char,
+    true,
+    charData.strokes
+  );
+  return {
+    ...state,
+    gridCells: updatedCells,
+    activeCellIndex: nextCellIndex,
+    activeMode: 'freeform',
+    selectedChar: null,
+    freeformStrokes: state.gridCells[nextCellIndex]?.strokes ?? [],
+    completedStrokeIndices: [],
+    feedback: {
+      type: 'success',
+      message: `Saved "${char}"! Onto next cell.`
+    }
+  };
+};
+
+export const submitActiveCell = (state: GameState): GameState => {
+  const nextCellIndex = Math.min(
+    state.gridCells.length - 1,
+    state.activeCellIndex + 1
+  );
+  if (state.activeMode === 'freeform') {
+    return submitFreeformCell(state, nextCellIndex);
+  }
+  if (state.selectedChar) {
+    return submitKanjiCell(state, state.selectedChar, nextCellIndex);
+  }
+  return state;
+};
+
+export const clearCell = (state: GameState, cellIndex: number): GameState => {
+  const isCurrentActive = cellIndex === state.activeCellIndex;
+  return {
+    ...state,
+    gridCells: updateGridCell(
+      state.gridCells,
+      cellIndex,
+      null,
+      false,
+      undefined
+    ),
+    freeformStrokes: isCurrentActive ? [] : state.freeformStrokes,
+    completedStrokeIndices: isCurrentActive ? [] : state.completedStrokeIndices,
+    feedback: {
+      type: 'info',
+      message: `Cell ${cellIndex + 1} cleared.`
+    }
+  };
+};
+
 const handleCompletedCharacter = (state: GameState): GameState => {
+  if (!state.selectedChar) return state;
   const isTarget = state.targetKanji.some((t) => t.char === state.selectedChar);
+  const charData = getCharacterData(state.selectedChar);
   const updatedCells = updateGridCell(
     state.gridCells,
     state.activeCellIndex,
     state.selectedChar,
-    isTarget
+    isTarget,
+    charData.strokes
   );
   const nextCellIndex = Math.min(
     state.gridCells.length - 1,
@@ -154,6 +319,9 @@ const handleCompletedCharacter = (state: GameState): GameState => {
     ...state,
     gridCells: updatedCells,
     activeCellIndex: nextCellIndex,
+    activeMode: 'freeform',
+    selectedChar: null,
+    freeformStrokes: state.gridCells[nextCellIndex]?.strokes ?? [],
     completedStrokeIndices: [],
     feedback: {
       type: 'success',
@@ -185,10 +353,11 @@ const handleCorrectStroke = (
 
 export const resetCurrentCharacter = (state: GameState): GameState => ({
   ...state,
+  freeformStrokes: [],
   completedStrokeIndices: [],
   feedback: {
     type: 'info',
-    message: 'Current character strokes cleared. Draw again from stroke 1.'
+    message: 'Current character strokes cleared. Draw again.'
   }
 });
 
@@ -258,17 +427,93 @@ export const processStrokeResult = (
   return handleStrokeError(state, result);
 };
 
+const evaluateStrokesCell = (
+  cellIndex: number,
+  strokes: readonly Stroke[],
+  candidateKana: readonly {
+    readonly char: string;
+    readonly strokes: readonly Stroke[];
+  }[]
+): CellEvaluation => {
+  const recognized = recognizeKanaFromStrokes(strokes, candidateKana);
+  if (recognized) {
+    return {
+      cellIndex,
+      char: recognized,
+      isTargetKanji: false,
+      status: 'recognized-kana',
+      feedback: `Hiragana "${recognized}" (Recognized)`
+    };
+  }
+  return {
+    cellIndex,
+    char: null,
+    isTargetKanji: false,
+    status: 'valid-kana',
+    feedback: 'Hiragana (Handwritten, accepted)'
+  };
+};
+
+const isCellTargetKanji = (
+  cell: GridCell,
+  targetKanjiChars: readonly string[]
+): boolean => {
+  if (cell.isTargetKanji) return true;
+  if (!cell.char) return false;
+  return targetKanjiChars.includes(cell.char);
+};
+
+const evaluateSingleCell = (
+  cell: GridCell,
+  targetKanjiChars: readonly string[],
+  candidateKana: readonly {
+    readonly char: string;
+    readonly strokes: readonly Stroke[];
+  }[]
+): CellEvaluation => {
+  if (cell.char && isCellTargetKanji(cell, targetKanjiChars)) {
+    return {
+      cellIndex: cell.index,
+      char: cell.char,
+      isTargetKanji: true,
+      status: 'target-kanji',
+      feedback: `Target kanji "${cell.char}" (Stroke order verified)`
+    };
+  }
+  const strokes = cell.strokes;
+  if (strokes && strokes.length > 0) {
+    return evaluateStrokesCell(cell.index, strokes, candidateKana);
+  }
+  return {
+    cellIndex: cell.index,
+    char: cell.char,
+    isTargetKanji: false,
+    status: 'empty',
+    feedback: 'Empty'
+  };
+};
+
 export const scoreSentenceSubmission = (
   gridCells: readonly GridCell[],
   targetKanji: readonly TargetKanjiPrompt[]
 ): SentenceSubmissionResult => {
-  const writtenChars = gridCells
-    .map((c) => c.char)
-    .filter((c): c is string => c !== null);
+  const candidateKana = AVAILABLE_KANA.map((kana) => ({
+    char: kana,
+    strokes: getCharacterData(kana).strokes
+  }));
   const targetChars = targetKanji.map((t) => t.char);
-  const usedTargetKanji = targetChars.filter((c) => writtenChars.includes(c));
+
+  const cellEvaluations = gridCells
+    .filter(
+      (cell) => cell.char !== null || (cell.strokes && cell.strokes.length > 0)
+    )
+    .map((cell) => evaluateSingleCell(cell, targetChars, candidateKana));
+
+  const usedTargetKanji = targetChars.filter((c) =>
+    cellEvaluations.some((ev) => ev.isTargetKanji && ev.char === c)
+  );
   const unusedTargetKanji = targetChars.filter(
-    (c) => !writtenChars.includes(c)
+    (c) => !usedTargetKanji.includes(c)
   );
   const bonus =
     usedTargetKanji.length === targetKanji.length
@@ -277,11 +522,14 @@ export const scoreSentenceSubmission = (
   const pointsAwarded =
     usedTargetKanji.length * POINTS_PER_TARGET_KANJI + bonus;
 
+  const sentenceText = cellEvaluations.map((ev) => ev.char ?? '・').join('');
+
   return {
     usedTargetKanji,
     unusedTargetKanji,
     pointsAwarded,
-    sentenceText: writtenChars.join('')
+    sentenceText,
+    cellEvaluations
   };
 };
 
@@ -378,8 +626,6 @@ export const startGameWithConfig = (
   config: KanjiConfig
 ): GameState => {
   const targetKanji = buildTargetKanjiPrompts(config.selectedKanji);
-  const firstChar =
-    targetKanji[FIRST_INDEX]?.char ?? config.selectedKanji[FIRST_INDEX];
 
   return {
     ...state,
@@ -388,12 +634,14 @@ export const startGameWithConfig = (
     targetKanji,
     gridCells: initGridCells(),
     activeCellIndex: FIRST_INDEX,
-    selectedChar: firstChar,
+    activeMode: 'freeform',
+    selectedChar: null,
+    freeformStrokes: [],
     completedStrokeIndices: [],
     feedback: {
       type: 'info',
       message:
-        'Game started! Write target kanji or connecting kana in the vertical manuscript grid.'
+        'Game started! Write hiragana freely in the active cell or select a target kanji.'
     },
     showGuide: false,
     submissionResult: null

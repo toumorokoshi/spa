@@ -63,6 +63,15 @@ export interface GridCell {
   readonly row: number;
   readonly char: string | null;
   readonly isTargetKanji: boolean;
+  readonly strokes?: readonly Stroke[];
+}
+
+export interface CellEvaluation {
+  readonly cellIndex: number;
+  readonly char: string | null;
+  readonly isTargetKanji: boolean;
+  readonly status: 'target-kanji' | 'recognized-kana' | 'valid-kana' | 'empty';
+  readonly feedback: string;
 }
 
 export interface SentenceSubmissionResult {
@@ -70,6 +79,7 @@ export interface SentenceSubmissionResult {
   readonly unusedTargetKanji: readonly string[];
   readonly pointsAwarded: number;
   readonly sentenceText: string;
+  readonly cellEvaluations?: readonly CellEvaluation[];
 }
 
 export interface KanjiYearOption {
@@ -91,7 +101,9 @@ export interface GameState {
   readonly targetKanji: readonly TargetKanjiPrompt[];
   readonly gridCells: readonly GridCell[];
   readonly activeCellIndex: number;
-  readonly selectedChar: string;
+  readonly selectedChar: string | null;
+  readonly activeMode: 'freeform' | 'kanji';
+  readonly freeformStrokes: readonly Stroke[];
   readonly completedStrokeIndices: readonly number[];
   readonly feedback: FeedbackState;
   readonly showGuide: boolean;

@@ -109,9 +109,6 @@ describe('App rendering and challenge display', () => {
       rendered.getByRole('region', { name: /japanese vertical writing grid/i })
     ).toBeTruthy();
     expect(
-      rendered.getByRole('region', { name: /character selection/i })
-    ).toBeTruthy();
-    expect(
       rendered.getByRole('region', { name: /writing arena/i })
     ).toBeTruthy();
     expect(
@@ -128,6 +125,11 @@ describe('App rendering and challenge display', () => {
     const rendered = render(<App />);
     startPracticeSession(rendered);
 
+    const targetKanjiBtn = rendered.getByRole('button', {
+      name: /reading ひ, meaning sun/i
+    });
+    fireEvent.click(targetKanjiBtn);
+
     const bigChar = rendered.container.querySelector('.big-char');
     expect(bigChar?.textContent).toBe('?');
     expect(rendered.getByText(/\[ひ\] Sun \/ Day/)).toBeTruthy();
@@ -139,24 +141,36 @@ describe('App controls and character selection', () => {
     localStorage.clear();
   });
 
-  it('selects cells and changes character from palette', () => {
+  it('selects cells and writes in freeform mode', () => {
     const rendered = render(<App />);
     startPracticeSession(rendered);
+
+    expect(rendered.getByText(/Cell 1: Write Hiragana/i)).toBeTruthy();
 
     const cell2 = rendered.getByRole('gridcell', { name: /cell 2/i });
     fireEvent.click(cell2);
 
-    const kanaChip = rendered.getByRole('button', {
-      name: /select kana は/i
-    });
-    fireEvent.click(kanaChip);
+    expect(rendered.getByText(/Cell 2: Write Hiragana/i)).toBeTruthy();
 
-    expect(rendered.getByText(/Topic marker \(ha\)/)).toBeTruthy();
+    const targetKanjiBtn = rendered.getByRole('button', {
+      name: /reading ひ, meaning sun/i
+    });
+    fireEvent.click(targetKanjiBtn);
+    expect(rendered.getByText(/Stroke 1 of 4/i)).toBeTruthy();
+
+    const cancelBtn = rendered.getByRole('button', { name: /cancel kanji/i });
+    fireEvent.click(cancelBtn);
+    expect(rendered.getByText(/Cell 2: Write Hiragana/i)).toBeTruthy();
   });
 
-  it('toggles hint visibility when clicking toggle hint button', () => {
+  it('toggles hint visibility when clicking toggle hint button in kanji mode', () => {
     const rendered = render(<App />);
     startPracticeSession(rendered);
+
+    const targetKanjiBtn = rendered.getByRole('button', {
+      name: /reading ひ, meaning sun/i
+    });
+    fireEvent.click(targetKanjiBtn);
 
     const hintBtn = rendered.getByRole('button', { name: /show hint/i });
     expect(hintBtn).toBeTruthy();
@@ -171,7 +185,7 @@ describe('App canvas writing and multi-stroke detection', () => {
     localStorage.clear();
   });
 
-  it('handles stylus pointer events on the canvas', () => {
+  it('handles stylus pointer events on the canvas in freeform mode', () => {
     const rendered = render(<App />);
     startPracticeSession(rendered);
 
@@ -188,9 +202,14 @@ describe('App canvas writing and multi-stroke detection', () => {
     expect(alert).toBeTruthy();
   });
 
-  it('accepts stroke 1 and seamlessly detects stroke 2 without errors', () => {
+  it('accepts stroke 1 and seamlessly detects stroke 2 without errors in kanji mode', () => {
     const rendered = render(<App />);
     startPracticeSession(rendered);
+
+    const targetKanjiBtn = rendered.getByRole('button', {
+      name: /reading ひ, meaning sun/i
+    });
+    fireEvent.click(targetKanjiBtn);
 
     const canvas = rendered.getByLabelText(
       /stylus handwriting practice canvas/i
@@ -217,6 +236,43 @@ describe('App canvas writing and multi-stroke detection', () => {
 
     expect(rendered.getByText(/Ready for stroke 3/i)).toBeTruthy();
     expect(rendered.getByText('Stroke 3 of 4')).toBeTruthy();
+  });
+});
+
+describe('App sentence submission and evaluation', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('submits sentence and displays end-of-game evaluation modal', () => {
+    const rendered = render(<App />);
+    startPracticeSession(rendered);
+
+    const canvas = rendered.getByLabelText(
+      /stylus handwriting practice canvas/i
+    );
+    canvas.setPointerCapture = () => {};
+    canvas.releasePointerCapture = () => {};
+    canvas.hasPointerCapture = () => false;
+
+    fireEvent.pointerDown(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 150, clientY: 150, pointerId: 1 });
+    fireEvent.pointerUp(canvas, { pointerId: 1 });
+
+    const submitCellBtn = rendered.getByRole('button', {
+      name: /submit character/i
+    });
+    fireEvent.click(submitCellBtn);
+
+    const submitSentenceBtn = rendered.getByRole('button', {
+      name: /submit sentence/i
+    });
+    fireEvent.click(submitSentenceBtn);
+
+    expect(
+      rendered.getByRole('heading', { name: /sentence submitted!/i })
+    ).toBeTruthy();
+    expect(rendered.getByText(/characters evaluated:/i)).toBeTruthy();
   });
 });
 

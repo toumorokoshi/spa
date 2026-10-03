@@ -25,6 +25,8 @@ One of the mechanics is writing a sentence. The player must come up with it them
 - The user is given 5 different kanji that they must use, written in hiragana.
 - The player is shown a grid to write a sentence. The sentence is written top down, and right to left, in the same fashion that Japanese is typically written.
 - The player writes a sentence.
+- The player does not need to specify the hiragana they are writing before hand. They can just write each cell, then hit submit to move on to the next character. The evalution of correctness is done at the end.
+  - For kanji, the player must select the kanji they are writing. then the game will enforce stroke order.
 - After the player is finished writing sentences, the player submits them, and is scored based on the number of kanji that they have used from the list given.
 
 The player should have to write the kanji from memory. showing the sentence in hiragana to the user is fine.

@@ -1,5 +1,5 @@
 import { GRID_COLUMNS, POINTS_PER_TARGET_KANJI } from '../constants';
-import { GridCell } from '../types';
+import { GridCell, Stroke } from '../types';
 
 interface VerticalSentenceGridProps {
   readonly cells: readonly GridCell[];
@@ -29,9 +29,65 @@ const computeCellClass = (
   return `grid-cell ${activeClass} ${targetClass} ${filledClass}`.trim();
 };
 
+const renderStrokesSvg = (strokes: readonly Stroke[]) => (
+  <svg
+    className="cell-strokes-preview"
+    viewBox="0 0 100 100"
+    aria-hidden="true"
+  >
+    {strokes.map((stroke, sIdx) => {
+      const d = stroke.reduce(
+        (acc, pt, pIdx) => `${acc} ${pIdx === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`,
+        ''
+      );
+      return (
+        <path
+          key={sIdx}
+          d={d}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      );
+    })}
+  </svg>
+);
+
+const computeCellHasContent = (cell: GridCell): boolean => {
+  if (cell.char !== null) return true;
+  return (cell.strokes?.length ?? 0) > 0;
+};
+
+const formatCellAriaLabel = (
+  index: number,
+  char: string | null,
+  hasContent: boolean,
+  isActive: boolean
+): string => {
+  const contentLabel = char ?? (hasContent ? 'Handwritten' : 'Empty');
+  const activeLabel = isActive ? ', active' : '';
+  return `Cell ${index + 1}: ${contentLabel}${activeLabel}`;
+};
+
+const renderCellCharContent = (cell: GridCell) => {
+  if (cell.char) return cell.char;
+  if (cell.strokes && cell.strokes.length > 0) {
+    return renderStrokesSvg(cell.strokes);
+  }
+  return '';
+};
+
 const GridCellButton = ({ cell, isActive, onSelect }: GridCellButtonProps) => {
-  const hasChar = cell.char !== null;
-  const className = computeCellClass(isActive, cell.isTargetKanji, hasChar);
+  const hasContent = computeCellHasContent(cell);
+  const className = computeCellClass(isActive, cell.isTargetKanji, hasContent);
+  const label = formatCellAriaLabel(
+    cell.index,
+    cell.char,
+    hasContent,
+    isActive
+  );
 
   return (
     <button
@@ -39,11 +95,9 @@ const GridCellButton = ({ cell, isActive, onSelect }: GridCellButtonProps) => {
       role="gridcell"
       className={className}
       onClick={onSelect}
-      aria-label={`Cell ${cell.index + 1}: ${cell.char ?? 'Empty'}${
-        isActive ? ', active' : ''
-      }`}
+      aria-label={label}
     >
-      <span className="cell-char">{cell.char ?? ''}</span>
+      <span className="cell-char">{renderCellCharContent(cell)}</span>
       <span className="cell-num">{cell.index + 1}</span>
     </button>
   );

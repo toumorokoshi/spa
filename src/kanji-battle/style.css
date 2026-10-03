@@ -647,6 +647,12 @@ body {
   line-height: 1;
 }
 
+.cell-strokes-preview {
+  width: 2.2rem;
+  height: 2.2rem;
+  display: block;
+}
+
 .grid-cell.target-kanji .cell-char {
   color: #a7f3d0;
 }
@@ -838,6 +844,59 @@ body {
 .used-kanji-list.muted {
   color: #94a3b8;
   font-weight: 400;
+}
+
+.evaluations-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.evaluations-title {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.evaluations-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.eval-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.eval-chip.eval-kanji {
+  background: rgba(6, 78, 59, 0.4);
+  border-color: #059669;
+  color: #6ee7b7;
+}
+
+.eval-chip.eval-kana {
+  background: #0f172a;
+  border-color: #334155;
+  color: #93c5fd;
+}
+
+.chip-cell {
+  font-size: 0.65rem;
+  color: #64748b;
+}
+
+.chip-char {
+  font-size: 0.95rem;
 }
 
 .submission-actions {

@@ -3,6 +3,7 @@ import {
   APP_TITLE,
   APP_SUBTITLE,
   FIRST_INDEX,
+  NORMALIZED_BOX_SIZE,
   TARGET_KANJI_COUNT
 } from './constants';
 import { getCharacterData } from './character-data';
@@ -19,6 +20,9 @@ import {
   switchTab,
   selectCell,
   setSelectedChar,
+  setSelectedTargetKanji,
+  addFreeformStroke,
+  submitActiveCell,
   clearCell,
   submitSentence,
   startNewChallenge,
@@ -37,7 +41,6 @@ import { CharacterStatus } from './components/character-status';
 import { WritingCanvas } from './components/writing-canvas';
 import { TargetKanjiBanner } from './components/target-kanji-banner';
 import { VerticalSentenceGrid } from './components/vertical-sentence-grid';
-import { CharacterPalette } from './components/character-palette';
 import { SubmissionModal } from './components/submission-modal';
 import {
   KanjiConfigView,
@@ -49,7 +52,8 @@ import {
   GameState,
   PlayerProfile,
   Point,
-  ShopItem
+  ShopItem,
+  Stroke
 } from './types';
 
 const AppHeader = () => (
@@ -96,43 +100,107 @@ interface PracticeAreaProps {
   readonly onOpenConfig: () => void;
   readonly onNextChallenge: () => void;
   readonly onCloseSubmission: () => void;
+  readonly onSubmitCell: () => void;
+  readonly onSwitchToFreeform: () => void;
 }
 
 interface WritingArenaProps {
+  readonly mode: 'freeform' | 'kanji';
+  readonly activeCellIndex: number;
   readonly charData: CharacterData;
   readonly completedStrokeIndices: readonly number[];
+  readonly freeformStrokes: readonly Stroke[];
   readonly totalStrokes: number;
   readonly showGuide: boolean;
   readonly onClearInk: () => void;
   readonly onToggleGuide: () => void;
   readonly onStroke: (pts: readonly Point[], w: number, h: number) => void;
+  readonly onSubmitCell: () => void;
+  readonly onSwitchToFreeform: () => void;
 }
 
 const WritingArenaSection = ({
+  mode,
+  activeCellIndex,
   charData,
   completedStrokeIndices,
+  freeformStrokes,
   totalStrokes,
   showGuide,
   onClearInk,
   onToggleGuide,
-  onStroke
+  onStroke,
+  onSubmitCell,
+  onSwitchToFreeform
 }: WritingArenaProps) => (
   <section className="writing-section" aria-label="Writing Arena">
     <CharacterStatus
+      mode={mode}
+      activeCellIndex={activeCellIndex}
       character={charData}
       completedCount={completedStrokeIndices.length}
       totalStrokes={totalStrokes}
+      freeformStrokesCount={freeformStrokes.length}
       showGuide={showGuide}
       onClearCharacter={onClearInk}
       onToggleGuide={onToggleGuide}
+      onSubmitCell={onSubmitCell}
+      onSwitchToFreeform={onSwitchToFreeform}
     />
     <WritingCanvas
+      mode={mode}
       targetStrokes={charData.strokes}
       completedStrokeIndices={completedStrokeIndices}
+      freeformStrokes={freeformStrokes}
       showGuide={showGuide}
       onStrokeFinished={onStroke}
     />
   </section>
+);
+
+interface SentenceGridSectionProps {
+  readonly state: GameState;
+  readonly usedTargetsCount: number;
+  readonly hasWrittenAny: boolean;
+  readonly onOpenConfig: () => void;
+  readonly onSelectTarget: (char: string) => void;
+  readonly onSelectCell: (index: number) => void;
+  readonly onClearActiveCell: () => void;
+  readonly onSubmitSentence: () => void;
+}
+
+const SentenceGridSection = ({
+  state,
+  usedTargetsCount,
+  hasWrittenAny,
+  onOpenConfig,
+  onSelectTarget,
+  onSelectCell,
+  onClearActiveCell,
+  onSubmitSentence
+}: SentenceGridSectionProps) => (
+  <>
+    <PracticeToolbar
+      selectedYear={state.config.selectedYear}
+      onOpenConfig={onOpenConfig}
+    />
+    <TargetKanjiBanner
+      targetKanji={state.targetKanji}
+      gridCells={state.gridCells}
+      selectedChar={state.selectedChar}
+      onSelectTarget={onSelectTarget}
+    />
+    <VerticalSentenceGrid
+      cells={state.gridCells}
+      activeCellIndex={state.activeCellIndex}
+      usedCount={usedTargetsCount}
+      totalTargets={state.targetKanji.length}
+      hasWrittenAny={hasWrittenAny}
+      onSelectCell={onSelectCell}
+      onClearActiveCell={onClearActiveCell}
+      onSubmitSentence={onSubmitSentence}
+    />
+  </>
 );
 
 const PracticeArea = ({
@@ -150,47 +218,37 @@ const PracticeArea = ({
   onToggleGuide,
   onOpenConfig,
   onNextChallenge,
-  onCloseSubmission
+  onCloseSubmission,
+  onSubmitCell,
+  onSwitchToFreeform
 }: PracticeAreaProps) => (
   <div className="practice-container">
-    <PracticeToolbar
-      selectedYear={state.config.selectedYear}
-      onOpenConfig={onOpenConfig}
-    />
-
-    <TargetKanjiBanner
-      targetKanji={state.targetKanji}
-      gridCells={state.gridCells}
-      selectedChar={state.selectedChar}
-      onSelectTarget={onSelectTarget}
-    />
-
-    <VerticalSentenceGrid
-      cells={state.gridCells}
-      activeCellIndex={state.activeCellIndex}
-      usedCount={usedTargetsCount}
-      totalTargets={state.targetKanji.length}
+    <SentenceGridSection
+      state={state}
+      usedTargetsCount={usedTargetsCount}
       hasWrittenAny={hasWrittenAny}
+      onOpenConfig={onOpenConfig}
+      onSelectTarget={onSelectTarget}
       onSelectCell={onSelectCell}
       onClearActiveCell={onClearActiveCell}
       onSubmitSentence={onSubmitSentence}
     />
 
-    <CharacterPalette
-      selectedChar={state.selectedChar}
-      onSelectChar={onSelectTarget}
-    />
-
     <FeedbackBanner feedback={state.feedback} />
 
     <WritingArenaSection
+      mode={state.activeMode}
+      activeCellIndex={state.activeCellIndex}
       charData={charData}
       completedStrokeIndices={state.completedStrokeIndices}
+      freeformStrokes={state.freeformStrokes}
       totalStrokes={totalStrokes}
       showGuide={state.showGuide}
       onClearInk={onClearInk}
       onToggleGuide={onToggleGuide}
       onStroke={onStroke}
+      onSubmitCell={onSubmitCell}
+      onSwitchToFreeform={onSwitchToFreeform}
     />
 
     {state.submissionResult ? (
@@ -282,9 +340,22 @@ const computeGridStats = (state: GameState) => {
   const usedTargetsCount = state.targetKanji.filter((t) =>
     writtenChars.includes(t.char)
   ).length;
-  const hasWrittenAny = writtenChars.length > 0;
+  const hasWrittenAny =
+    writtenChars.length > 0 ||
+    state.gridCells.some((c) => c.strokes && c.strokes.length > 0) ||
+    state.freeformStrokes.length > 0;
   return { usedTargetsCount, hasWrittenAny };
 };
+
+const normalizeDrawnStroke = (
+  pts: readonly Point[],
+  w: number,
+  h: number
+): Stroke =>
+  pts.map((pt) => ({
+    x: (pt.x / w) * NORMALIZED_BOX_SIZE,
+    y: (pt.y / h) * NORMALIZED_BOX_SIZE
+  }));
 
 const createConfigProps = (
   state: GameState,
@@ -337,6 +408,12 @@ const useKanjiGame = (onAwardPoints: (points: number) => void) => {
   const { usedTargetsCount, hasWrittenAny } = computeGridStats(state);
 
   const handleStroke = (pts: readonly Point[], w: number, h: number) => {
+    if (state.activeMode === 'freeform') {
+      setState((prev) =>
+        addFreeformStroke(prev, normalizeDrawnStroke(pts, w, h))
+      );
+      return;
+    }
     const res = matchStroke(
       pts,
       w,
@@ -376,7 +453,10 @@ const useKanjiGame = (onAwardPoints: (points: number) => void) => {
     onOpenConfig: () => setState(openConfiguration),
     onNextChallenge: () => setState((prev) => startNewChallenge(prev)),
     onCloseSubmission: () =>
-      setState((prev) => ({ ...prev, submissionResult: null }))
+      setState((prev) => ({ ...prev, submissionResult: null })),
+    onSubmitCell: () => setState(submitActiveCell),
+    onSwitchToFreeform: () =>
+      setState((prev) => setSelectedTargetKanji(prev, null))
   };
 
   return { state, setState, configProps, practiceProps };

@@ -5,10 +5,10 @@ Single-page app under `src/kanji-battle/`: an interactive Japanese sentence writ
 ## Features
 
 - **Free Sentence Writing Mode**: Players compose their own Japanese sentences in an authentic manuscript grid written top-to-bottom and right-to-left (縦書き).
-- **5-Kanji Challenge in Hiragana**: Each challenge provides 5 target kanji shown exclusively in hiragana readings and English meanings, challenging the player to recall and write each kanji from memory. Clicking any target card selects it for writing in the active grid cell.
-- **Connecting Kana Palette**: Players can choose grammatical particles and connecting kana (は, の, に, を, etc.) directly for sentence grid cells without duplicating target cards.
-- **Stroke Order & Geometry Validation**: Real-time handwriting recognition verifies each stroke shape and enforces correct stroke order with immediate interactive feedback, evaluating current and future strokes sequentially.
-- **Submission Scoring & Point Rewards**: Players submit their completed sentence and receive points based on how many of the 5 target kanji were used (`+50 pts` per target kanji, plus full completion bonus). Points persist in `localStorage`.
+- **5-Kanji Challenge in Hiragana**: Each challenge provides 5 target kanji shown exclusively in hiragana readings and English meanings, challenging the player to recall and write each kanji from memory.
+- **Freeform Writing Flow**: The player does not need to specify hiragana beforehand. They write each cell freely on the stylus canvas, then click "Submit Character ▶" to commit strokes and advance to the next cell.
+- **Target Kanji Real-Time Stroke Order Enforcement**: For kanji, the player selects the target kanji card they are writing, and the game enforces stroke order and stroke geometry in real time with guidelines and hints.
+- **End-of-Sentence Evaluation & Breakdown**: Correctness evaluation is performed upon sentence submission. The system verifies target kanji, matches handwritten kana strokes, displays an evaluated character chip breakdown in a submission modal, and awards points based on target kanji used (`+50 pts` per target kanji, plus completion bonus). Points persist in `localStorage`.
 - **Minifigure Shop**: Players can spend accumulated points to unlock and equip collectible LEGO minifigure companions that appear in the app header.
 
 ## Configuration

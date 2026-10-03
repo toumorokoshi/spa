@@ -127,3 +127,47 @@ export const matchStroke = (
   );
   return classifyMatch(best, currentStrokeIndex);
 };
+
+export interface CandidateCharacter {
+  readonly char: string;
+  readonly strokes: readonly Stroke[];
+}
+
+const computeCharacterStrokesDistance = (
+  userStrokes: readonly Stroke[],
+  targetStrokes: readonly Stroke[]
+): number => {
+  const strokeDistances = userStrokes.map((uStroke, i) => {
+    const resampledUser = resampleStroke(uStroke, RESAMPLE_SAMPLE_COUNT);
+    const resampledTarget = resampleStroke(
+      targetStrokes[i],
+      RESAMPLE_SAMPLE_COUNT
+    );
+    return strokeDistance(resampledUser, resampledTarget);
+  });
+  const total = strokeDistances.reduce((acc, d) => acc + d, 0);
+  return total / userStrokes.length;
+};
+
+export const recognizeKanaFromStrokes = (
+  userStrokes: readonly Stroke[],
+  candidates: readonly CandidateCharacter[]
+): string | null => {
+  if (userStrokes.length === 0) {
+    return null;
+  }
+  const lengthMatches = candidates.filter(
+    (c) => c.strokes.length === userStrokes.length
+  );
+  if (lengthMatches.length === 0) {
+    return null;
+  }
+  const scored = lengthMatches.map((cand) => ({
+    char: cand.char,
+    distance: computeCharacterStrokesDistance(userStrokes, cand.strokes)
+  }));
+  const best = scored.reduce((min, curr) =>
+    curr.distance < min.distance ? curr : min
+  );
+  return best.distance <= STROKE_MATCH_THRESHOLD ? best.char : null;
+};
