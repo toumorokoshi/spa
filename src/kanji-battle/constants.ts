@@ -39,9 +39,15 @@ export const SHOP_PRICE_TIER_4 = 250;
 export const SHOP_PRICE_TIER_5 = 300;
 export const SHOP_PRICE_TIER_6 = 400;
 
-export const STORAGE_PROFILE_KEY = 'kanji-battle:profile';
+import { KanjiYearOption } from './types';
 
-export const ALLOWED_SENTENCE_KANJI = [
+export const STORAGE_PROFILE_KEY = 'kanji-battle:profile';
+export const STORAGE_CONFIG_KEY = 'kanji-battle:config';
+
+export const DEFAULT_SELECTED_YEAR = 1;
+export const SECOND_YEAR = 2;
+
+export const KANJI_YEAR_1 = [
   '一',
   '二',
   '三',
@@ -60,8 +66,42 @@ export const ALLOWED_SENTENCE_KANJI = [
   '手',
   '火',
   '水',
-  '出',
-  '行'
+  '出'
+] as const;
+
+export const KANJI_YEAR_2 = [
+  '行',
+  '今',
+  '午',
+  '古',
+  '万',
+  '元',
+  '牛',
+  '毛',
+  '方',
+  '分',
+  '心'
+] as const;
+
+export const KANJI_YEAR_OPTIONS: readonly KanjiYearOption[] = [
+  {
+    year: DEFAULT_SELECTED_YEAR,
+    label: 'Year 1 (小学1年)',
+    description:
+      'Foundational elementary kanji: numbers, nature, and body parts',
+    kanji: KANJI_YEAR_1
+  },
+  {
+    year: SECOND_YEAR,
+    label: 'Year 2 (小学2年)',
+    description: 'Second-grade kanji: time, movement, directions, and concepts',
+    kanji: KANJI_YEAR_2
+  }
+];
+
+export const ALLOWED_SENTENCE_KANJI = [
+  ...KANJI_YEAR_1,
+  ...KANJI_YEAR_2
 ] as const;
 
 export const ALLOWED_KANJI = ALLOWED_SENTENCE_KANJI;

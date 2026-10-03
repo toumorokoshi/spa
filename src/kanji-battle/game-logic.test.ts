@@ -1,8 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
   ALL_TARGETS_BONUS_POINTS,
+  DEFAULT_SELECTED_YEAR,
   FIRST_INDEX,
+  KANJI_YEAR_2,
   POINTS_PER_TARGET_KANJI,
+  SECOND_YEAR,
   TARGET_KANJI_COUNT,
   TOTAL_GRID_CELLS
 } from './constants';
@@ -17,7 +20,16 @@ import {
   submitSentence,
   resetCurrentCharacter,
   toggleGuide,
-  switchTab
+  switchTab,
+  getKanjiYearOption,
+  selectYearConfig,
+  toggleKanjiSelection,
+  selectRandomKanjiForYear,
+  isConfigReadyToStart,
+  openConfiguration,
+  closeConfiguration,
+  updateConfig,
+  startGameWithConfig
 } from './game-logic';
 
 describe('grid and target challenge initialization', () => {
@@ -134,5 +146,94 @@ describe('sentence submission scoring and tab switching', () => {
 
     const shopState = switchTab(state, 'shop');
     expect(shopState.activeTab).toBe('shop');
+  });
+});
+
+describe('kanji configuration options and selection helpers', () => {
+  it('retrieves year options and kanji lists', () => {
+    const year1 = getKanjiYearOption(DEFAULT_SELECTED_YEAR);
+    expect(year1.year).toBe(DEFAULT_SELECTED_YEAR);
+    expect(year1.kanji.length).toBeGreaterThanOrEqual(TARGET_KANJI_COUNT);
+
+    const year2 = getKanjiYearOption(SECOND_YEAR);
+    expect(year2.year).toBe(SECOND_YEAR);
+    expect(year2.kanji).toEqual(KANJI_YEAR_2);
+  });
+
+  it('switches year configuration and populates target kanji', () => {
+    const initialConfig = {
+      selectedYear: DEFAULT_SELECTED_YEAR,
+      selectedKanji: ['日', '山', '木', '水', '火']
+    };
+    const year2Config = selectYearConfig(initialConfig, SECOND_YEAR);
+    expect(year2Config.selectedYear).toBe(SECOND_YEAR);
+    expect(year2Config.selectedKanji.length).toBe(TARGET_KANJI_COUNT);
+    year2Config.selectedKanji.forEach((char) => {
+      expect((KANJI_YEAR_2 as readonly string[]).includes(char)).toBe(true);
+    });
+  });
+
+  it('toggles kanji selection and enforces 5 kanji limit', () => {
+    const config = {
+      selectedYear: DEFAULT_SELECTED_YEAR,
+      selectedKanji: ['日', '山', '木', '水', '火']
+    };
+    // Deselect one
+    const withoutSun = toggleKanjiSelection(config, '日');
+    expect(withoutSun.selectedKanji).toEqual(['山', '木', '水', '火']);
+    expect(isConfigReadyToStart(withoutSun)).toBe(false);
+
+    // Re-select another
+    const withMoon = toggleKanjiSelection(withoutSun, '月');
+    expect(withMoon.selectedKanji).toEqual(['山', '木', '水', '火', '月']);
+    expect(isConfigReadyToStart(withMoon)).toBe(true);
+
+    // Cannot add beyond 5
+    const overflow = toggleKanjiSelection(withMoon, '川');
+    expect(overflow.selectedKanji.length).toBe(TARGET_KANJI_COUNT);
+    expect(overflow.selectedKanji).toEqual(withMoon.selectedKanji);
+  });
+
+  it('selects 5 random kanji for a year', () => {
+    const randomSet = selectRandomKanjiForYear(SECOND_YEAR, TARGET_KANJI_COUNT);
+    expect(randomSet.length).toBe(TARGET_KANJI_COUNT);
+    const unique = new Set(randomSet);
+    expect(unique.size).toBe(TARGET_KANJI_COUNT);
+  });
+});
+
+describe('kanji game state transitions with configuration', () => {
+  it('starts game with configuration, initializes targets, and exits configuration view', () => {
+    const state = createInitialGameState();
+    expect(state.isConfiguring).toBe(true);
+
+    const year2Config = {
+      selectedYear: SECOND_YEAR,
+      selectedKanji: ['行', '今', '午', '古', '万']
+    };
+    const started = startGameWithConfig(state, year2Config);
+    expect(started.isConfiguring).toBe(false);
+    expect(started.config).toEqual(year2Config);
+    expect(started.targetKanji.map((t) => t.char)).toEqual(
+      year2Config.selectedKanji
+    );
+    expect(started.selectedChar).toBe('行');
+    expect(started.gridCells.length).toBe(TOTAL_GRID_CELLS);
+  });
+
+  it('allows opening, closing, and updating configuration state', () => {
+    const playingState = { ...createInitialGameState(), isConfiguring: false };
+    const opened = openConfiguration(playingState);
+    expect(opened.isConfiguring).toBe(true);
+
+    const closed = closeConfiguration(opened);
+    expect(closed.isConfiguring).toBe(false);
+
+    const customConfig = {
+      selectedYear: SECOND_YEAR,
+      selectedKanji: ['行', '今', '午', '古', '万']
+    };
+    const updated = updateConfig(closed, customConfig);
+    expect(updated.config).toEqual(customConfig);
   });
 });

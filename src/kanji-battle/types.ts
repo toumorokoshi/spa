@@ -72,8 +72,22 @@ export interface SentenceSubmissionResult {
   readonly sentenceText: string;
 }
 
+export interface KanjiYearOption {
+  readonly year: number;
+  readonly label: string;
+  readonly description: string;
+  readonly kanji: readonly string[];
+}
+
+export interface KanjiConfig {
+  readonly selectedYear: number;
+  readonly selectedKanji: readonly string[];
+}
+
 export interface GameState {
   readonly activeTab: 'practice' | 'shop';
+  readonly isConfiguring: boolean;
+  readonly config: KanjiConfig;
   readonly targetKanji: readonly TargetKanjiPrompt[];
   readonly gridCells: readonly GridCell[];
   readonly activeCellIndex: number;

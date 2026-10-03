@@ -2,14 +2,21 @@ import { getCharacterData } from './character-data';
 import {
   ALL_TARGETS_BONUS_POINTS,
   DEFAULT_CHALLENGE_KANJI,
+  DEFAULT_SELECTED_YEAR,
   FIRST_INDEX,
   GRID_COLUMNS,
   GRID_ROWS,
-  POINTS_PER_TARGET_KANJI
+  HALF_FACTOR,
+  KANJI_YEAR_OPTIONS,
+  POINTS_PER_TARGET_KANJI,
+  TARGET_KANJI_COUNT
 } from './constants';
+import { createDefaultConfig } from './config-storage';
 import {
   GameState,
   GridCell,
+  KanjiConfig,
+  KanjiYearOption,
   SentenceSubmissionResult,
   StrokeMatchResult,
   TargetKanjiPrompt
@@ -41,15 +48,32 @@ export const buildTargetKanjiPrompts = (
     };
   });
 
+const resolveInitialConfig = (
+  param?: KanjiConfig | readonly string[]
+): KanjiConfig => {
+  if (!param) return createDefaultConfig();
+  if (Array.isArray(param)) {
+    return {
+      selectedYear: DEFAULT_SELECTED_YEAR,
+      selectedKanji: param
+    };
+  }
+  return param;
+};
+
 export const createInitialGameState = (
-  targetChars: readonly string[] = DEFAULT_CHALLENGE_KANJI
+  initialParam?: KanjiConfig | readonly string[],
+  isConfiguring = true
 ): GameState => {
-  const targetKanji = buildTargetKanjiPrompts(targetChars);
+  const config = resolveInitialConfig(initialParam);
+  const targetKanji = buildTargetKanjiPrompts(config.selectedKanji);
   const firstChar =
-    targetKanji[FIRST_INDEX]?.char ?? DEFAULT_CHALLENGE_KANJI[0];
+    targetKanji[FIRST_INDEX]?.char ?? DEFAULT_CHALLENGE_KANJI[FIRST_INDEX];
 
   return {
     activeTab: 'practice',
+    isConfiguring,
+    config,
     targetKanji,
     gridCells: initGridCells(),
     activeCellIndex: FIRST_INDEX,
@@ -273,13 +297,117 @@ export const submitSentence = (state: GameState): GameState => {
   };
 };
 
+export const getKanjiYearOption = (year: number): KanjiYearOption =>
+  KANJI_YEAR_OPTIONS.find((opt) => opt.year === year) ??
+  KANJI_YEAR_OPTIONS[FIRST_INDEX];
+
+export const selectYearConfig = (
+  config: KanjiConfig,
+  nextYear: number
+): KanjiConfig => {
+  if (config.selectedYear === nextYear) {
+    return config;
+  }
+  const option = getKanjiYearOption(nextYear);
+  const preserved = config.selectedKanji.filter((char) =>
+    (option.kanji as readonly string[]).includes(char)
+  );
+  const fillCandidates = option.kanji.filter(
+    (char) => !preserved.includes(char)
+  );
+  const needed = TARGET_KANJI_COUNT - preserved.length;
+  const filled = [...preserved, ...fillCandidates.slice(FIRST_INDEX, needed)];
+  return {
+    selectedYear: nextYear,
+    selectedKanji: filled
+  };
+};
+
+export const toggleKanjiSelection = (
+  config: KanjiConfig,
+  char: string
+): KanjiConfig => {
+  if (config.selectedKanji.includes(char)) {
+    return {
+      ...config,
+      selectedKanji: config.selectedKanji.filter((c) => c !== char)
+    };
+  }
+  if (config.selectedKanji.length >= TARGET_KANJI_COUNT) {
+    return config;
+  }
+  return {
+    ...config,
+    selectedKanji: [...config.selectedKanji, char]
+  };
+};
+
+export const selectRandomKanjiForYear = (
+  year: number,
+  count = TARGET_KANJI_COUNT,
+  randomFn = Math.random
+): readonly string[] => {
+  const option = getKanjiYearOption(year);
+  const shuffled = [...option.kanji].sort(() => randomFn() - HALF_FACTOR);
+  return shuffled.slice(FIRST_INDEX, count);
+};
+
+export const isConfigReadyToStart = (config: KanjiConfig): boolean =>
+  config.selectedKanji.length === TARGET_KANJI_COUNT;
+
+export const openConfiguration = (state: GameState): GameState => ({
+  ...state,
+  isConfiguring: true
+});
+
+export const closeConfiguration = (state: GameState): GameState => ({
+  ...state,
+  isConfiguring: false
+});
+
+export const updateConfig = (
+  state: GameState,
+  config: KanjiConfig
+): GameState => ({
+  ...state,
+  config
+});
+
+export const startGameWithConfig = (
+  state: GameState,
+  config: KanjiConfig
+): GameState => {
+  const targetKanji = buildTargetKanjiPrompts(config.selectedKanji);
+  const firstChar =
+    targetKanji[FIRST_INDEX]?.char ?? config.selectedKanji[FIRST_INDEX];
+
+  return {
+    ...state,
+    config,
+    isConfiguring: false,
+    targetKanji,
+    gridCells: initGridCells(),
+    activeCellIndex: FIRST_INDEX,
+    selectedChar: firstChar,
+    completedStrokeIndices: [],
+    feedback: {
+      type: 'info',
+      message:
+        'Game started! Write target kanji or connecting kana in the vertical manuscript grid.'
+    },
+    showGuide: false,
+    submissionResult: null
+  };
+};
+
 export const startNewChallenge = (
   state: GameState,
   newTargetChars?: readonly string[]
 ): GameState => {
-  const initial = createInitialGameState(newTargetChars);
-  return {
-    ...initial,
-    activeTab: state.activeTab
+  const chars = newTargetChars ?? state.config.selectedKanji;
+  const config: KanjiConfig = {
+    ...state.config,
+    selectedKanji: chars
   };
+  return startGameWithConfig(state, config);
 };
