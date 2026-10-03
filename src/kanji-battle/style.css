@@ -1,7 +1,263 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   font-family:
     system-ui,
     -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
     sans-serif;
-  padding: 2rem;
+  background: #0f172a;
+  color: #f8fafc;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 1rem;
+}
+
+.kanji-battle-app {
+  width: 100%;
+  max-width: 540px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.game-header {
+  text-align: center;
+}
+
+.game-header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #f1f5f9;
+}
+
+.subtitle {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  margin-top: 0.2rem;
+}
+
+.sentence-display {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sentence-header {
+  text-align: center;
+}
+
+.sentence-kana {
+  font-size: 1rem;
+  color: #38bdf8;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.sentence-english {
+  font-size: 0.95rem;
+  color: #cbd5e1;
+}
+
+.character-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.char-tile {
+  width: 2.75rem;
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 1.4rem;
+  font-weight: 600;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.char-tile.done {
+  background: #064e3b;
+  color: #6ee7b7;
+  border-color: #059669;
+}
+
+.char-tile.active {
+  background: #1e3a8a;
+  color: #93c5fd;
+  border-color: #38bdf8;
+  transform: scale(1.08);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+.char-tile.pending {
+  background: #0f172a;
+  color: #64748b;
+  border-color: #334155;
+}
+
+.feedback-banner {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  font-weight: 500;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.feedback-info {
+  background: #1e293b;
+  border: 1px solid #38bdf8;
+  color: #e0f2fe;
+}
+
+.feedback-success {
+  background: #064e3b;
+  border: 1px solid #10b981;
+  color: #d1fae5;
+}
+
+.feedback-warning {
+  background: #451a03;
+  border: 1px solid #f59e0b;
+  color: #fef3c7;
+}
+
+.feedback-error {
+  background: #450a0a;
+  border: 1px solid #ef4444;
+  color: #fee2e2;
+}
+
+.writing-section {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.character-status {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.char-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.big-char {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  line-height: 1;
+}
+
+.char-meaning {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.stroke-counter {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.char-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.canvas-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.writing-canvas {
+  width: 300px;
+  height: 300px;
+  background: #090d16;
+  border-radius: 12px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.nav-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.sentence-indicator {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.btn {
+  padding: 0.65rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-sm {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.btn-primary {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #0369a1;
+}
+
+.btn-secondary {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #475569;
 }
