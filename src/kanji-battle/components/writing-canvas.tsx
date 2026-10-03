@@ -139,6 +139,32 @@ const extractPoint = (e: PointerEvent, canvas: HTMLCanvasElement): Point => {
   return { x: e.clientX - rect.left, y: e.clientY - rect.top };
 };
 
+const safeSetPointerCapture = (
+  canvas: HTMLCanvasElement | null,
+  id: number
+): void => {
+  if (!canvas) return;
+  try {
+    canvas.setPointerCapture(id);
+  } catch {
+    // Ignored if capture is unavailable
+  }
+};
+
+const safeReleasePointerCapture = (
+  canvas: HTMLCanvasElement | null,
+  id?: number
+): void => {
+  if (!canvas || id === undefined) return;
+  try {
+    if (canvas.hasPointerCapture(id)) {
+      canvas.releasePointerCapture(id);
+    }
+  } catch {
+    // Ignored
+  }
+};
+
 export const WritingCanvas = ({
   targetStrokes,
   completedStrokeIndices,
@@ -164,10 +190,9 @@ export const WritingCanvas = ({
   }, [targetStrokes, completedStrokeIndices, showGuide, currentPoints]);
 
   const onDown = (e: PointerEvent) => {
-    if (!canvasRef.current) return;
-    canvasRef.current.setPointerCapture(e.pointerId);
+    safeSetPointerCapture(canvasRef.current, e.pointerId);
     setIsDrawing(true);
-    setCurrentPoints([extractPoint(e, canvasRef.current)]);
+    setCurrentPoints([extractPoint(e, canvasRef.current!)]);
   };
 
   const onMove = (e: PointerEvent) => {
@@ -175,9 +200,10 @@ export const WritingCanvas = ({
     setCurrentPoints((prev) => [...prev, extractPoint(e, canvasRef.current!)]);
   };
 
-  const onUp = () => {
+  const onUp = (e?: PointerEvent) => {
     if (!isDrawing) return;
     setIsDrawing(false);
+    safeReleasePointerCapture(canvasRef.current, e?.pointerId);
     if (currentPoints.length > 0) {
       onStrokeFinished(currentPoints, CANVAS_SIZE, CANVAS_SIZE);
     }
@@ -196,6 +222,7 @@ export const WritingCanvas = ({
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onUp}
+        onPointerLeave={onUp}
       />
     </div>
   );

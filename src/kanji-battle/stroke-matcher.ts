@@ -36,20 +36,34 @@ const evaluateCandidate = (
   };
 };
 
-const findBestMatch = (
+const findRemainingBestMatch = (
   resampledUser: readonly Point[],
-  characterStrokes: readonly Stroke[]
+  characterStrokes: readonly Stroke[],
+  currentStrokeIndex: number
 ): CandidateEvaluation => {
-  return characterStrokes
-    .map((target, idx) => evaluateCandidate(resampledUser, target, idx))
-    .reduce<CandidateEvaluation>((best, candidate) => {
+  const remainingStrokes = characterStrokes.slice(currentStrokeIndex);
+  const initial = evaluateCandidate(
+    resampledUser,
+    remainingStrokes[0],
+    currentStrokeIndex
+  );
+
+  return remainingStrokes
+    .slice(1)
+    .reduce<CandidateEvaluation>((best, target, offset) => {
+      const candidateIndex = currentStrokeIndex + 1 + offset;
+      const candidate = evaluateCandidate(
+        resampledUser,
+        target,
+        candidateIndex
+      );
       const minCandidate = Math.min(
         candidate.distance,
         candidate.reverseDistance
       );
       const minBest = Math.min(best.distance, best.reverseDistance);
       return minCandidate < minBest ? candidate : best;
-    });
+    }, initial);
 };
 
 const classifyMatch = (
@@ -68,8 +82,15 @@ const classifyMatch = (
   }
 
   if (best.reverseDistance <= REVERSE_MATCH_THRESHOLD) {
+    if (best.index === currentStrokeIndex) {
+      return {
+        status: 'wrong-direction',
+        expectedIndex: currentStrokeIndex,
+        matchedIndex: currentStrokeIndex
+      };
+    }
     return {
-      status: 'wrong-direction',
+      status: 'wrong-order',
       expectedIndex: currentStrokeIndex,
       matchedIndex: best.index
     };
@@ -94,7 +115,15 @@ export const matchStroke = (
     return { status: 'too-short' };
   }
 
+  if (!characterStrokes[currentStrokeIndex]) {
+    return { status: 'unrecognized', expectedIndex: currentStrokeIndex };
+  }
+
   const resampledUser = resampleStroke(normalized, RESAMPLE_SAMPLE_COUNT);
-  const best = findBestMatch(resampledUser, characterStrokes);
+  const best = findRemainingBestMatch(
+    resampledUser,
+    characterStrokes,
+    currentStrokeIndex
+  );
   return classifyMatch(best, currentStrokeIndex);
 };

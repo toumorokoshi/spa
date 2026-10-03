@@ -110,7 +110,7 @@ describe('App rendering and challenge display', () => {
   });
 });
 
-describe('App interactions and canvas writing', () => {
+describe('App controls and character selection', () => {
   beforeEach(() => {
     localStorage.clear();
   });
@@ -140,6 +140,12 @@ describe('App interactions and canvas writing', () => {
     fireEvent.click(hintBtn);
     expect(rendered.getByRole('button', { name: /hide hint/i })).toBeTruthy();
   });
+});
+
+describe('App canvas writing and multi-stroke detection', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
 
   it('handles stylus pointer events on the canvas', () => {
     const rendered = render(<App />);
@@ -156,6 +162,37 @@ describe('App interactions and canvas writing', () => {
 
     const alert = rendered.getByRole('alert');
     expect(alert).toBeTruthy();
+  });
+
+  it('accepts stroke 1 and seamlessly detects stroke 2 without errors', () => {
+    const rendered = render(<App />);
+    startPracticeSession(rendered);
+
+    const canvas = rendered.getByLabelText(
+      /stylus handwriting practice canvas/i
+    );
+    canvas.setPointerCapture = () => {};
+    canvas.releasePointerCapture = () => {};
+    canvas.hasPointerCapture = () => false;
+
+    // Stroke 1 of 日: downward line along x=96
+    fireEvent.pointerDown(canvas, { clientX: 96, clientY: 66, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 96, clientY: 168, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 96, clientY: 246, pointerId: 1 });
+    fireEvent.pointerUp(canvas, { pointerId: 1 });
+
+    expect(rendered.getByText(/Ready for stroke 2/i)).toBeTruthy();
+    expect(rendered.getByText('Stroke 2 of 4')).toBeTruthy();
+
+    // Stroke 2 of 日: top-right corner from (96, 72) -> (204, 72) -> (204, 246)
+    fireEvent.pointerDown(canvas, { clientX: 96, clientY: 72, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 204, clientY: 72, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 204, clientY: 168, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 204, clientY: 246, pointerId: 1 });
+    fireEvent.pointerUp(canvas, { pointerId: 1 });
+
+    expect(rendered.getByText(/Ready for stroke 3/i)).toBeTruthy();
+    expect(rendered.getByText('Stroke 3 of 4')).toBeTruthy();
   });
 });
 

@@ -82,7 +82,7 @@ export const CharacterStatus = ({
           type="button"
           className="btn btn-secondary btn-sm"
           onClick={onClearCharacter}
-          disabled={completedCount === 0 || isSentenceComplete}
+          disabled={completedCount === 0 || isCharDone}
         >
           Clear Ink
         </button>

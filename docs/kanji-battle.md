@@ -5,8 +5,9 @@ Single-page app under `src/kanji-battle/`: an interactive Japanese sentence writ
 ## Features
 
 - **Free Sentence Writing Mode**: Players compose their own Japanese sentences in an authentic manuscript grid written top-to-bottom and right-to-left (縦書き).
-- **5-Kanji Challenge in Hiragana**: Each challenge provides 5 target kanji shown exclusively in hiragana readings and English meanings, challenging the player to recall and write each kanji from memory.
-- **Stroke Order & Geometry Validation**: Real-time handwriting recognition verifies each stroke shape and enforces correct stroke order with immediate interactive feedback.
+- **5-Kanji Challenge in Hiragana**: Each challenge provides 5 target kanji shown exclusively in hiragana readings and English meanings, challenging the player to recall and write each kanji from memory. Clicking any target card selects it for writing in the active grid cell.
+- **Connecting Kana Palette**: Players can choose grammatical particles and connecting kana (は, の, に, を, etc.) directly for sentence grid cells without duplicating target cards.
+- **Stroke Order & Geometry Validation**: Real-time handwriting recognition verifies each stroke shape and enforces correct stroke order with immediate interactive feedback, evaluating current and future strokes sequentially.
 - **Submission Scoring & Point Rewards**: Players submit their completed sentence and receive points based on how many of the 5 target kanji were used (`+50 pts` per target kanji, plus full completion bonus). Points persist in `localStorage`.
 - **Minifigure Shop**: Players can spend accumulated points to unlock and equip collectible LEGO minifigure companions that appear in the app header.
 

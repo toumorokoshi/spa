@@ -52,13 +52,13 @@ const resolveInitialConfig = (
   param?: KanjiConfig | readonly string[]
 ): KanjiConfig => {
   if (!param) return createDefaultConfig();
-  if (Array.isArray(param)) {
-    return {
-      selectedYear: DEFAULT_SELECTED_YEAR,
-      selectedKanji: param
-    };
+  if ('selectedYear' in param && 'selectedKanji' in param) {
+    return param;
   }
-  return param;
+  return {
+    selectedYear: DEFAULT_SELECTED_YEAR,
+    selectedKanji: param as readonly string[]
+  };
 };
 
 export const createInitialGameState = (

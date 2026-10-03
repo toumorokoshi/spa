@@ -177,7 +177,6 @@ const PracticeArea = ({
     />
 
     <CharacterPalette
-      targetKanji={state.targetKanji}
       selectedChar={state.selectedChar}
       onSelectChar={onSelectTarget}
     />

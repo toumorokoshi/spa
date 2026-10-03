@@ -22,7 +22,8 @@ export const TargetKanjiBanner = ({
       <div className="target-banner-header">
         <h2>Target Kanji Challenge</h2>
         <p className="target-banner-sub">
-          Compose your own sentence using these 5 kanji. Write them from memory!
+          Compose your sentence with these 5 kanji. Select a kanji to write it
+          from memory into the active cell.
         </p>
       </div>
 
