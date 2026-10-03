@@ -3,9 +3,10 @@ import {
   SENTENCE_POINTS_MEDIUM,
   SENTENCE_POINTS_LONG
 } from './constants';
+import { validateSentenceList } from './sentence-validator';
 import { SentencePrompt } from './types';
 
-export const SENTENCE_LIST: readonly SentencePrompt[] = [
+export const SENTENCE_LIST: readonly SentencePrompt[] = validateSentenceList([
   {
     id: 'sun-mountain',
     text: '日は山から出る',
@@ -48,4 +49,4 @@ export const SENTENCE_LIST: readonly SentencePrompt[] = [
     kana: 'にほんにいく',
     points: SENTENCE_POINTS_MEDIUM
   }
-];
+]);

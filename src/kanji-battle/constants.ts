@@ -40,3 +40,29 @@ export const SHOP_PRICE_TIER_5 = 300;
 export const SHOP_PRICE_TIER_6 = 400;
 
 export const STORAGE_PROFILE_KEY = 'kanji-battle:profile';
+
+export const ALLOWED_SENTENCE_KANJI = [
+  '一',
+  '二',
+  '三',
+  '四',
+  '五',
+  '十',
+  '日',
+  '月',
+  '山',
+  '川',
+  '木',
+  '本',
+  '大',
+  '口',
+  '目',
+  '手',
+  '火',
+  '水',
+  '出',
+  '行'
+] as const;
+
+export const ALLOWED_KANJI = ALLOWED_SENTENCE_KANJI;
+export type AllowedKanji = (typeof ALLOWED_SENTENCE_KANJI)[number];

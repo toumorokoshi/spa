@@ -8,3 +8,7 @@ Single-page app under `src/kanji-battle/`: an interactive Japanese sentence writ
 - **Memory Recall**: Kanji characters are masked with placeholders so players must recall them from memory, while phonetic hiragana readings and English meanings are provided as hints.
 - **Scoring Points**: Completing sentences awards points (`+50 pts` for short, `+75 pts` for medium, `+100 pts` for long sentences). Points persist across sessions in local storage.
 - **Minifigure Shop**: Players can spend accumulated points to unlock and equip collectible LEGO minifigure companions (e.g. Ninja, Samurai, Astronaut, Wizard, Robot, Knight) that appear in the app header.
+
+## Configuration
+
+- **Allowed Sentence Kanji**: The available kanji that can be used to construct sentences are defined as a constant array `ALLOWED_SENTENCE_KANJI` in `src/kanji-battle/constants.ts`. All sentence prompts are validated against this list to guarantee only supported kanji are presented to the player.

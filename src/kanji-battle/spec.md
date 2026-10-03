@@ -14,6 +14,8 @@ The shop has:
 
 The player should have a point value that accumulates from playing multiple games. Scoring points will allow the player to purchase things from the shop.
 
+The points are stored in local storage, so the user can return to their session.
+
 ## Game modes
 
 ### Point values
