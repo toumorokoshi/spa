@@ -1,5 +1,6 @@
 import { InventoryItem, PlayerProfile, ShopItem } from '../types';
 import { BlindBoxCard } from './blind-box-card';
+import { INVENTORY_MINIFIG_SIZE, MinifigureSvg } from './minifigure-svg';
 
 export interface InventoryViewProps {
   readonly profile: PlayerProfile;
@@ -20,13 +21,11 @@ const resolveItemDetails = (entry: InventoryItem, itemDef?: ShopItem) => {
   if (!itemDef) {
     return {
       name: entry.id,
-      icon: '🧱',
       desc: ''
     };
   }
   return {
     name: itemDef.name,
-    icon: itemDef.icon,
     desc: itemDef.description
   };
 };
@@ -58,13 +57,17 @@ const InventoryItemCard = ({
   isEquipped,
   onEquip
 }: ItemCardProps) => {
-  const { name, icon, desc } = resolveItemDetails(entry, itemDef);
+  const { name, desc } = resolveItemDetails(entry, itemDef);
 
   return (
     <div className={`inventory-card ${isEquipped ? 'equipped' : ''}`}>
       <div className="inventory-card-top">
         <span className="inventory-card-icon" aria-hidden="true">
-          {icon}
+          <MinifigureSvg
+            id={entry.id}
+            title={name}
+            size={INVENTORY_MINIFIG_SIZE}
+          />
         </span>
         <span
           className="inventory-count-pill"

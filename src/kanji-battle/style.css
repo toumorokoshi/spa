@@ -555,8 +555,31 @@ body {
 }
 
 .shop-card-icon {
-  font-size: 2.75rem;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 72px;
+}
+
+.minifigure-svg {
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.shop-card:hover .minifigure-svg,
+.inventory-card:hover .minifigure-svg {
+  transform: scale(1.08) translateY(-2px);
+}
+
+.revealed-icon .minifigure-svg {
+  filter: drop-shadow(0 8px 16px rgba(245, 158, 11, 0.45));
+}
+
+.companion-badge-icon {
+  margin: 0;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
 
 .shop-card-info {
@@ -1471,7 +1494,10 @@ body {
 }
 
 .inventory-card-icon {
-  font-size: 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 72px;
 }
 
 .inventory-count-pill {
@@ -1625,7 +1651,10 @@ body {
 }
 
 .revealed-icon {
-  font-size: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 104px;
 }
 
 .revealed-title {

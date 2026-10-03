@@ -1,4 +1,5 @@
 import { PlayerProfile, ShopItem } from '../types';
+import { MinifigureSvg, SHOP_MINIFIG_SIZE } from './minifigure-svg';
 
 interface ShopViewProps {
   readonly items: readonly ShopItem[];
@@ -86,7 +87,11 @@ export const ShopView = ({
             className={`shop-card ${isEquipped ? 'equipped' : ''}`}
           >
             <div className="shop-card-icon" aria-hidden="true">
-              {item.icon}
+              <MinifigureSvg
+                id={item.id}
+                title={item.name}
+                size={SHOP_MINIFIG_SIZE}
+              />
             </div>
             <div className="shop-card-info">
               <h3>{item.name}</h3>

@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
 import { getRandomMinifigure, SHOP_ITEMS } from '../shop-data';
 import { ShopItem } from '../types';
+import { MinifigureSvg, REVEAL_MINIFIG_SIZE } from './minifigure-svg';
 
 export interface BlindBoxCardProps {
   readonly unopenedCount: number;
@@ -30,7 +31,11 @@ const RevealedMinifigure = ({
       ✨
     </div>
     <div className="revealed-icon" aria-hidden="true">
-      {item.icon}
+      <MinifigureSvg
+        id={item.id}
+        title={item.name}
+        size={REVEAL_MINIFIG_SIZE}
+      />
     </div>
     <h3 className="revealed-title">{item.name}</h3>
     <p className="revealed-desc">{item.description}</p>

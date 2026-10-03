@@ -1,4 +1,5 @@
 import { ShopItem } from '../types';
+import { COMPANION_MINIFIG_SIZE, MinifigureSvg } from './minifigure-svg';
 
 interface TabNavigationProps {
   readonly activeTab: 'practice' | 'inventory' | 'shop';
@@ -12,7 +13,12 @@ const CompanionBadge = ({ item }: { readonly item: ShopItem | null }) => {
   if (!item) return null;
   return (
     <span className="companion-badge" aria-label="Equipped Companion">
-      {item.icon} {item.name}
+      <MinifigureSvg
+        id={item.id}
+        size={COMPANION_MINIFIG_SIZE}
+        className="companion-badge-icon"
+      />
+      <span className="companion-badge-name">Companion: {item.name}</span>
     </span>
   );
 };
