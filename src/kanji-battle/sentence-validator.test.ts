@@ -25,9 +25,9 @@ describe('configuration: ALLOWED_SENTENCE_KANJI constants', () => {
     expect(isAllowedKanji('木')).toBe(true);
     expect(isAllowedKanji('火')).toBe(true);
 
-    // Unconfigured kanji
+    // Unconfigured kanji (Grade 4+ / not in first 3 years)
     expect(isAllowedKanji('私')).toBe(false);
-    expect(isAllowedKanji('電')).toBe(false);
+    expect(isAllowedKanji('機')).toBe(false);
 
     // Kana characters
     expect(isAllowedKanji('は')).toBe(false);
@@ -48,9 +48,9 @@ describe('sentence-validator: text extraction and validation', () => {
     expect(canConstructSentence('日は山から出る')).toBe(true);
     expect(canConstructSentence('大きな木')).toBe(true);
 
-    // Contains unconfigured kanji: 私 and 見
-    expect(canConstructSentence('私は木を見る')).toBe(false);
-    expect(getDisallowedKanji('私は木を見る')).toEqual(['私', '見']);
+    // Contains unconfigured kanji: 私 and 機
+    expect(canConstructSentence('私は木と機を見る')).toBe(false);
+    expect(getDisallowedKanji('私は木と機を見る')).toEqual(['私', '機']);
   });
 
   it('constructs valid sentence prompts and rejects invalid ones', () => {
@@ -65,9 +65,9 @@ describe('sentence-validator: text extraction and validation', () => {
 
     const invalidPrompt: SentencePrompt = {
       id: 'custom-invalid',
-      text: '電車に乗る',
-      english: 'Ride the train.',
-      kana: 'でんしゃにのる',
+      text: '飛行機に乗る',
+      english: 'Ride the airplane.',
+      kana: 'ひこうきにのる',
       points: SENTENCE_POINTS_SHORT
     };
     expect(() => constructSentence(invalidPrompt)).toThrow(/disallowed kanji/);

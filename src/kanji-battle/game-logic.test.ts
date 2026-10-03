@@ -1,14 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import {
   ALL_TARGETS_BONUS_POINTS,
+  ALLOWED_SENTENCE_KANJI,
   DEFAULT_SELECTED_YEAR,
   FIRST_INDEX,
+  KANJI_YEAR_1,
   KANJI_YEAR_2,
+  KANJI_YEAR_3,
   POINTS_PER_TARGET_KANJI,
   SECOND_YEAR,
   TARGET_KANJI_COUNT,
+  THIRD_YEAR,
   TOTAL_GRID_CELLS
 } from './constants';
+import { getCharacterData } from './character-data';
 import {
   createInitialGameState,
   initGridCells,
@@ -153,11 +158,18 @@ describe('kanji configuration options and selection helpers', () => {
   it('retrieves year options and kanji lists', () => {
     const year1 = getKanjiYearOption(DEFAULT_SELECTED_YEAR);
     expect(year1.year).toBe(DEFAULT_SELECTED_YEAR);
-    expect(year1.kanji.length).toBeGreaterThanOrEqual(TARGET_KANJI_COUNT);
+    expect(year1.kanji).toEqual(KANJI_YEAR_1);
+    expect(year1.kanji.length).toBe(80);
 
     const year2 = getKanjiYearOption(SECOND_YEAR);
     expect(year2.year).toBe(SECOND_YEAR);
     expect(year2.kanji).toEqual(KANJI_YEAR_2);
+    expect(year2.kanji.length).toBe(160);
+
+    const year3 = getKanjiYearOption(THIRD_YEAR);
+    expect(year3.year).toBe(THIRD_YEAR);
+    expect(year3.kanji).toEqual(KANJI_YEAR_3);
+    expect(year3.kanji.length).toBe(200);
   });
 
   it('switches year configuration and populates target kanji', () => {
@@ -171,8 +183,17 @@ describe('kanji configuration options and selection helpers', () => {
     year2Config.selectedKanji.forEach((char) => {
       expect((KANJI_YEAR_2 as readonly string[]).includes(char)).toBe(true);
     });
-  });
 
+    const year3Config = selectYearConfig(initialConfig, THIRD_YEAR);
+    expect(year3Config.selectedYear).toBe(THIRD_YEAR);
+    expect(year3Config.selectedKanji.length).toBe(TARGET_KANJI_COUNT);
+    year3Config.selectedKanji.forEach((char) => {
+      expect((KANJI_YEAR_3 as readonly string[]).includes(char)).toBe(true);
+    });
+  });
+});
+
+describe('kanji selection and character dataset validation', () => {
   it('toggles kanji selection and enforces 5 kanji limit', () => {
     const config = {
       selectedYear: DEFAULT_SELECTED_YEAR,
@@ -195,10 +216,32 @@ describe('kanji configuration options and selection helpers', () => {
   });
 
   it('selects 5 random kanji for a year', () => {
-    const randomSet = selectRandomKanjiForYear(SECOND_YEAR, TARGET_KANJI_COUNT);
-    expect(randomSet.length).toBe(TARGET_KANJI_COUNT);
-    const unique = new Set(randomSet);
-    expect(unique.size).toBe(TARGET_KANJI_COUNT);
+    const randomSet2 = selectRandomKanjiForYear(
+      SECOND_YEAR,
+      TARGET_KANJI_COUNT
+    );
+    expect(randomSet2.length).toBe(TARGET_KANJI_COUNT);
+    const unique2 = new Set(randomSet2);
+    expect(unique2.size).toBe(TARGET_KANJI_COUNT);
+
+    const randomSet3 = selectRandomKanjiForYear(THIRD_YEAR, TARGET_KANJI_COUNT);
+    expect(randomSet3.length).toBe(TARGET_KANJI_COUNT);
+    const unique3 = new Set(randomSet3);
+    expect(unique3.size).toBe(TARGET_KANJI_COUNT);
+    randomSet3.forEach((char) => {
+      expect((KANJI_YEAR_3 as readonly string[]).includes(char)).toBe(true);
+    });
+  });
+
+  it('verifies all 440 kanji in years 1-3 have complete character data', () => {
+    expect(ALLOWED_SENTENCE_KANJI.length).toBe(440);
+    ALLOWED_SENTENCE_KANJI.forEach((char) => {
+      const data = getCharacterData(char);
+      expect(data.char).toBe(char);
+      expect(data.reading).toBeTruthy();
+      expect(data.meaning).toBeTruthy();
+      expect(data.strokes.length).toBeGreaterThan(0);
+    });
   });
 });
 

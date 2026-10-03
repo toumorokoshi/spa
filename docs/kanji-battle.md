@@ -14,8 +14,8 @@ Single-page app under `src/kanji-battle/`: an interactive Japanese sentence writ
 ## Configuration
 
 - **Pre-Game Configuration Workflow**: Before the game mode begins, players configure their practice session through a 3-step workflow:
-  1. **Select Year of Kanji**: Choose the school grade level (Year 1 or Year 2 elementary kanji).
+  1. **Select Year of Kanji**: Choose the school grade level (Year 1, Year 2, or Year 3 elementary kanji — 440 total kanji across the first 3 grades).
   2. **Select Kanji to Practice**: Select exactly 5 specific kanji cards from the chosen year, with helper actions to pick 5 random kanji or select the first 5.
   3. **Start Game**: Transitions into the active writing game mode with the selected kanji as target prompts.
-- **Allowed Sentence Kanji**: The available kanji that can be used to construct sentences are defined as a constant array `ALLOWED_SENTENCE_KANJI` in `src/kanji-battle/constants.ts`, containing all Year 1 and Year 2 kanji with verified stroke recognition data.
+- **Allowed Sentence Kanji**: The available kanji that can be used to construct sentences are defined as a constant array `ALLOWED_SENTENCE_KANJI` in `src/kanji-battle/constants.ts`, containing all 440 kanji across Year 1 (80), Year 2 (160), and Year 3 (200) with complete stroke recognition data, elementary school hiragana readings, and English meanings.
 - **Persistent Preferences**: Selected configuration is stored in `localStorage` under `kanji-battle:config`, preserving chosen grade levels and kanji selections across sessions.

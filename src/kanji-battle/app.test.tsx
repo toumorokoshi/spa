@@ -53,6 +53,30 @@ describe('App configuration workflow and practice start', () => {
     ).toBeTruthy();
     expect(rendered.getByText(/Year 2 Practice/)).toBeTruthy();
   });
+});
+
+describe('App grade selection and practice reconfiguration', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('selects year 3 and starts game mode', () => {
+    const rendered = render(<App />);
+    const year3Btn = rendered.getByRole('button', { name: /year 3/i });
+    fireEvent.click(year3Btn);
+
+    expect(rendered.getByText(/漢/)).toBeTruthy();
+
+    startPracticeSession(rendered);
+
+    expect(
+      rendered.getByRole('region', { name: /japanese vertical writing grid/i })
+    ).toBeTruthy();
+    expect(
+      rendered.getByRole('region', { name: /required target kanji/i })
+    ).toBeTruthy();
+    expect(rendered.getByText(/Year 3 Practice/)).toBeTruthy();
+  });
 
   it('allows returning to configuration from practice toolbar', () => {
     const rendered = render(<App />);
