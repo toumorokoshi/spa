@@ -1,3 +1,4 @@
+import { isKanji } from '../character-data';
 import { SentencePrompt } from '../types';
 
 interface SentenceDisplayProps {
@@ -14,6 +15,13 @@ const computeTileClass = (isDone: boolean, isActive: boolean): string => {
     return 'char-tile active';
   }
   return 'char-tile pending';
+};
+
+const computeTileDisplay = (char: string, isDone: boolean): string => {
+  if (isKanji(char) && !isDone) {
+    return '?';
+  }
+  return char;
 };
 
 export const SentenceDisplay = ({
@@ -35,6 +43,7 @@ export const SentenceDisplay = ({
           const isDone = isSentenceComplete || idx < currentCharIndex;
           const isActive = !isSentenceComplete && idx === currentCharIndex;
           const statusClass = computeTileClass(isDone, isActive);
+          const displayChar = computeTileDisplay(char, isDone);
 
           return (
             <div
@@ -42,7 +51,7 @@ export const SentenceDisplay = ({
               className={statusClass}
               aria-current={isActive ? 'step' : undefined}
             >
-              <span className="tile-char">{char}</span>
+              <span className="tile-char">{displayChar}</span>
             </div>
           );
         })}

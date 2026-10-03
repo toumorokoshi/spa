@@ -11,7 +11,7 @@ export const createInitialGameState = (
     type: 'info',
     message: 'Write the highlighted character on the canvas below.'
   },
-  showGuide: true,
+  showGuide: false,
   isSentenceComplete: false
 });
 

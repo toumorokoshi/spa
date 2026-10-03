@@ -13,7 +13,7 @@ describe('stroke result handling', () => {
     expect(state.sentenceIndex).toBe(0);
     expect(state.charIndex).toBe(0);
     expect(state.completedStrokeIndices).toEqual([]);
-    expect(state.showGuide).toBe(true);
+    expect(state.showGuide).toBe(false);
     expect(state.isSentenceComplete).toBe(false);
   });
 

@@ -8,6 +8,8 @@ AGENTS SHOULD NOT EDIT THIS FILE
 
 One of the mechanics is writing a sentence. A prompt shows up with a sentence in Japaneese. The player must write the sentence by writing the strokes.
 
+The player should have to write the kanji from memory. showing the sentence in hiragana to the user is fine.
+
 ## Game mechanics
 
 ### Writing characters and kanji

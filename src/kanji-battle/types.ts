@@ -7,6 +7,7 @@ export type Stroke = readonly Point[];
 
 export interface CharacterData {
   readonly char: string;
+  readonly reading?: string;
   readonly meaning: string;
   readonly strokes: readonly Stroke[];
 }

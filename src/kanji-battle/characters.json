@@ -1,6 +1,7 @@
 {
   "一": {
     "char": "一",
+    "reading": "いち",
     "meaning": "One",
     "strokes": [
       [
@@ -12,6 +13,7 @@
   },
   "二": {
     "char": "二",
+    "reading": "に",
     "meaning": "Two",
     "strokes": [
       [
@@ -28,6 +30,7 @@
   },
   "三": {
     "char": "三",
+    "reading": "さん",
     "meaning": "Three",
     "strokes": [
       [
@@ -49,6 +52,7 @@
   },
   "四": {
     "char": "四",
+    "reading": "よん",
     "meaning": "Four",
     "strokes": [
       [
@@ -81,6 +85,7 @@
   },
   "五": {
     "char": "五",
+    "reading": "ご",
     "meaning": "Five",
     "strokes": [
       [
@@ -107,6 +112,7 @@
   },
   "十": {
     "char": "十",
+    "reading": "じゅう",
     "meaning": "Ten",
     "strokes": [
       [
@@ -123,6 +129,7 @@
   },
   "日": {
     "char": "日",
+    "reading": "ひ",
     "meaning": "Sun / Day",
     "strokes": [
       [
@@ -150,6 +157,7 @@
   },
   "月": {
     "char": "月",
+    "reading": "つき",
     "meaning": "Moon / Month",
     "strokes": [
       [
@@ -177,6 +185,7 @@
   },
   "山": {
     "char": "山",
+    "reading": "やま",
     "meaning": "Mountain",
     "strokes": [
       [
@@ -199,6 +208,7 @@
   },
   "川": {
     "char": "川",
+    "reading": "かわ",
     "meaning": "River",
     "strokes": [
       [
@@ -220,6 +230,7 @@
   },
   "木": {
     "char": "木",
+    "reading": "き",
     "meaning": "Tree / Wood",
     "strokes": [
       [
@@ -246,6 +257,7 @@
   },
   "本": {
     "char": "本",
+    "reading": "ほん",
     "meaning": "Book / Origin",
     "strokes": [
       [
@@ -277,6 +289,7 @@
   },
   "大": {
     "char": "大",
+    "reading": "おお",
     "meaning": "Big / Large",
     "strokes": [
       [
@@ -299,6 +312,7 @@
   },
   "口": {
     "char": "口",
+    "reading": "くち",
     "meaning": "Mouth",
     "strokes": [
       [
@@ -321,6 +335,7 @@
   },
   "目": {
     "char": "目",
+    "reading": "め",
     "meaning": "Eye",
     "strokes": [
       [
@@ -353,6 +368,7 @@
   },
   "手": {
     "char": "手",
+    "reading": "て",
     "meaning": "Hand",
     "strokes": [
       [
@@ -380,6 +396,7 @@
   },
   "火": {
     "char": "火",
+    "reading": "ひ",
     "meaning": "Fire",
     "strokes": [
       [
@@ -406,6 +423,7 @@
   },
   "水": {
     "char": "水",
+    "reading": "みず",
     "meaning": "Water",
     "strokes": [
       [
@@ -432,6 +450,7 @@
   },
   "出": {
     "char": "出",
+    "reading": "で",
     "meaning": "Exit / Emerge",
     "strokes": [
       [
@@ -466,6 +485,7 @@
   },
   "行": {
     "char": "行",
+    "reading": "い",
     "meaning": "Go / Journey",
     "strokes": [
       [
@@ -497,6 +517,7 @@
   },
   "は": {
     "char": "は",
+    "reading": "は",
     "meaning": "Topic marker (ha)",
     "strokes": [
       [
@@ -521,6 +542,7 @@
   },
   "と": {
     "char": "と",
+    "reading": "と",
     "meaning": "Particle (to / and)",
     "strokes": [
       [
@@ -538,6 +560,7 @@
   },
   "に": {
     "char": "に",
+    "reading": "に",
     "meaning": "Particle (ni / to / at)",
     "strokes": [
       [
@@ -559,6 +582,7 @@
   },
   "か": {
     "char": "か",
+    "reading": "か",
     "meaning": "Kana (ka)",
     "strokes": [
       [
@@ -581,6 +605,7 @@
   },
   "ら": {
     "char": "ら",
+    "reading": "ら",
     "meaning": "Kana (ra)",
     "strokes": [
       [
@@ -598,6 +623,7 @@
   },
   "る": {
     "char": "る",
+    "reading": "る",
     "meaning": "Kana (ru)",
     "strokes": [
       [
@@ -615,6 +641,7 @@
   },
   "き": {
     "char": "き",
+    "reading": "き",
     "meaning": "Kana (ki)",
     "strokes": [
       [
@@ -636,6 +663,7 @@
   },
   "な": {
     "char": "な",
+    "reading": "な",
     "meaning": "Kana (na)",
     "strokes": [
       [
@@ -661,6 +689,7 @@
   },
   "く": {
     "char": "く",
+    "reading": "く",
     "meaning": "Kana (ku)",
     "strokes": [
       [
