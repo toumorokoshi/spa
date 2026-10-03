@@ -40,6 +40,16 @@ interface KanjiBadgeProps {
   readonly totalStrokes: number;
 }
 
+const computeKanjiAriaLabel = (
+  character: CharacterData,
+  isCharDone: boolean
+): string => {
+  if (isKanji(character.char) && !isCharDone) {
+    return `Target: ${character.reading ?? '?'}`;
+  }
+  return `Target: ${character.char}`;
+};
+
 const KanjiBadge = ({
   character,
   isCharDone,
@@ -47,7 +57,10 @@ const KanjiBadge = ({
   totalStrokes
 }: KanjiBadgeProps) => (
   <div className="char-badge">
-    <span className="big-char" aria-label={`Target: ${character.char}`}>
+    <span
+      className="big-char"
+      aria-label={computeKanjiAriaLabel(character, isCharDone)}
+    >
       {computeDisplayChar(character.char, isCharDone)}
     </span>
     <div className="char-meta">

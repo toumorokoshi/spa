@@ -133,6 +133,10 @@ describe('App rendering and challenge display', () => {
     const bigChar = rendered.container.querySelector('.big-char');
     expect(bigChar?.textContent).toBe('?');
     expect(rendered.getByText(/\[ひ\] Sun \/ Day/)).toBeTruthy();
+    expect(
+      rendered.getByText(/Selected "ひ"\. Write it from memory on the canvas\./)
+    ).toBeTruthy();
+    expect(rendered.queryByText(/Selected "日"/)).toBeNull();
   });
 });
 

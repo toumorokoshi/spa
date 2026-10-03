@@ -100,6 +100,14 @@ export const switchTab = (
   activeTab: tab
 });
 
+const getCharReading = (state: GameState, char: string): string => {
+  const target = state.targetKanji.find((t) => t.char === char);
+  if (target?.reading) {
+    return target.reading;
+  }
+  return getCharacterData(char).reading ?? char;
+};
+
 const selectTargetKanjiCell = (
   state: GameState,
   cellIndex: number,
@@ -113,7 +121,7 @@ const selectTargetKanjiCell = (
   completedStrokeIndices: [],
   feedback: {
     type: 'info',
-    message: `Cell ${cellIndex + 1} selected with target kanji "${char}".`
+    message: `Cell ${cellIndex + 1} selected with target "${getCharReading(state, char)}".`
   }
 });
 
@@ -165,7 +173,7 @@ export const setSelectedTargetKanji = (
     completedStrokeIndices: [],
     feedback: {
       type: 'info',
-      message: `Selected "${char}". Write it from memory on the canvas.`
+      message: `Selected "${getCharReading(state, char)}". Write it from memory on the canvas.`
     }
   };
 };

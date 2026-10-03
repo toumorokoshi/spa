@@ -60,7 +60,7 @@ describe('grid and target challenge initialization', () => {
   });
 });
 
-describe('cell selection and stroke processing', () => {
+describe('cell and character selection', () => {
   it('selects cells and changes target character', () => {
     const state = createInitialGameState();
     const cellSelected = selectCell(state, 1);
@@ -68,8 +68,28 @@ describe('cell selection and stroke processing', () => {
 
     const charSelected = setSelectedChar(cellSelected, '木');
     expect(charSelected.selectedChar).toBe('木');
+    expect(charSelected.feedback.message).toBe(
+      'Selected "き". Write it from memory on the canvas.'
+    );
+    expect(charSelected.feedback.message).not.toContain('Selected "木"');
   });
 
+  it('selects cell with target kanji showing reading in feedback message', () => {
+    const state = {
+      ...createInitialGameState(),
+      gridCells: createInitialGameState().gridCells.map((c, i) =>
+        i === 0 ? { ...c, char: '日', isTargetKanji: true } : c
+      )
+    };
+    const cellSelected = selectCell(state, 0);
+    expect(cellSelected.feedback.message).toBe(
+      'Cell 1 selected with target "ひ".'
+    );
+    expect(cellSelected.feedback.message).not.toContain('"日"');
+  });
+});
+
+describe('stroke processing and character completion', () => {
   it('rejects wrong stroke order with error feedback', () => {
     const state = createInitialGameState();
     const wrongOrderState = processStrokeResult(
