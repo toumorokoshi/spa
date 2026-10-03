@@ -17,6 +17,22 @@ export interface SentencePrompt {
   readonly text: string;
   readonly english: string;
   readonly kana: string;
+  readonly points: number;
+}
+
+export interface ShopItem {
+  readonly id: string;
+  readonly name: string;
+  readonly category: 'minifigure';
+  readonly price: number;
+  readonly icon: string;
+  readonly description: string;
+}
+
+export interface PlayerProfile {
+  readonly points: number;
+  readonly purchasedItemIds: readonly string[];
+  readonly equippedItemId: string | null;
 }
 
 export interface StrokeMatchResult {
@@ -36,6 +52,7 @@ export interface FeedbackState {
 }
 
 export interface GameState {
+  readonly activeTab: 'practice' | 'shop';
   readonly sentenceIndex: number;
   readonly charIndex: number;
   readonly completedStrokeIndices: readonly number[];

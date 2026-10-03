@@ -2,7 +2,21 @@
 
 AGENTS SHOULD NOT EDIT THIS FILE
 
+## Shop
+
+The player can use points to buy things from the shop.
+
+The shop has:
+
+- lego minifigures, or something like it.
+
+## Scoring points
+
+The player should have a point value that accumulates from playing multiple games. Scoring points will allow the player to purchase things from the shop.
+
 ## Game modes
+
+### Point values
 
 ### Writing sentences
 
@@ -18,3 +32,7 @@ The user should be able to write on the screen (i.e. with a stylus), which will 
 
 If the stroke order is incorrect, it tells the user as such and does not
 accept the answer.
+
+## Configuration
+
+For configuration, there is a constants file that contains all of the Kanji that can be use to construct a sentence. These are the only kanji that can be used.

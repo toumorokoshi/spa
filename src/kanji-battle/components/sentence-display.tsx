@@ -34,7 +34,10 @@ export const SentenceDisplay = ({
   return (
     <section className="sentence-display" aria-label="Sentence Prompt">
       <div className="sentence-header">
-        <p className="sentence-kana">{sentence.kana}</p>
+        <div className="sentence-meta-row">
+          <p className="sentence-kana">{sentence.kana}</p>
+          <span className="reward-badge">+{sentence.points} pts</span>
+        </div>
         <p className="sentence-english">{sentence.english}</p>
       </div>
 

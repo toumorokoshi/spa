@@ -4,6 +4,7 @@ import { GameState, StrokeMatchResult } from './types';
 export const createInitialGameState = (
   sentenceIndex = FIRST_INDEX
 ): GameState => ({
+  activeTab: 'practice',
   sentenceIndex,
   charIndex: FIRST_INDEX,
   completedStrokeIndices: [],
@@ -13,6 +14,14 @@ export const createInitialGameState = (
   },
   showGuide: false,
   isSentenceComplete: false
+});
+
+export const switchTab = (
+  state: GameState,
+  tab: 'practice' | 'shop'
+): GameState => ({
+  ...state,
+  activeTab: tab
 });
 
 const handleCompletedCharacter = (
@@ -28,7 +37,7 @@ const handleCompletedCharacter = (
       isSentenceComplete: true,
       feedback: {
         type: 'success',
-        message: 'Sentence complete! Excellent stroke execution!'
+        message: 'Sentence complete! Points awarded to your balance!'
       }
     };
   }

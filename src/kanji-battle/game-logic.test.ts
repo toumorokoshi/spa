@@ -4,7 +4,8 @@ import {
   processStrokeResult,
   advanceSentence,
   resetCurrentCharacter,
-  toggleGuide
+  toggleGuide,
+  switchTab
 } from './game-logic';
 
 describe('stroke result handling', () => {
@@ -123,5 +124,16 @@ describe('sentence navigation and controls', () => {
 
     const toggled = toggleGuide(state);
     expect(toggled.showGuide).toBe(false);
+  });
+
+  it('switches active tab between practice and shop', () => {
+    const state = createInitialGameState(0);
+    expect(state.activeTab).toBe('practice');
+
+    const shopState = switchTab(state, 'shop');
+    expect(shopState.activeTab).toBe('shop');
+
+    const practiceState = switchTab(shopState, 'practice');
+    expect(practiceState.activeTab).toBe('practice');
   });
 });

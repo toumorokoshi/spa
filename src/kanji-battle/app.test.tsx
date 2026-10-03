@@ -66,3 +66,46 @@ describe('App memory writing mode and canvas interaction', () => {
     expect(alert).toBeTruthy();
   });
 });
+
+describe('App tabs and shop view interactions', () => {
+  it('switches between practice and minifig shop tabs', () => {
+    localStorage.clear();
+    const { getByRole, getByText, queryByText } = render(<App />);
+    expect(getByText(/Sentence 1 of 6/)).toBeTruthy();
+
+    const shopTabBtn = getByRole('button', { name: /minifig shop/i });
+    fireEvent.click(shopTabBtn);
+
+    expect(
+      getByRole('heading', { name: /lego minifigure shop/i })
+    ).toBeTruthy();
+    expect(queryByText(/Sentence 1 of 6/)).toBeNull();
+
+    const practiceTabBtn = getByRole('button', { name: /practice/i });
+    fireEvent.click(practiceTabBtn);
+
+    expect(getByText(/Sentence 1 of 6/)).toBeTruthy();
+  });
+
+  it('displays minifigures in the shop and allows buying when funded', () => {
+    localStorage.clear();
+    localStorage.setItem(
+      'kanji-battle:profile',
+      JSON.stringify({
+        points: 200,
+        purchasedItemIds: [],
+        equippedItemId: null
+      })
+    );
+
+    const { getByRole, getByText, getByLabelText } = render(<App />);
+    fireEvent.click(getByRole('button', { name: /minifig shop/i }));
+
+    expect(getByText('Ninja Minifig')).toBeTruthy();
+    const buyBtn = getByRole('button', { name: /buy for 100 pts/i });
+    fireEvent.click(buyBtn);
+
+    expect(getByText('Equipped')).toBeTruthy();
+    expect(getByLabelText(/points balance: 100/i)).toBeTruthy();
+  });
+});

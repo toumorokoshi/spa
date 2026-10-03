@@ -1,5 +1,5 @@
 export const APP_TITLE = 'Kanji Battle';
-export const APP_SUBTITLE = 'Sentence Writing Practice';
+export const APP_SUBTITLE = 'Sentence Writing Practice & Minifig Shop';
 
 export const CANVAS_SIZE = 300;
 export const HALF_FACTOR = 0.5;
@@ -26,3 +26,17 @@ export const PERCENT_FACTOR = 100;
 
 export const NAV_DIR_PREV = -1;
 export const NAV_DIR_NEXT = 1;
+
+export const INITIAL_PLAYER_POINTS = 0;
+export const SENTENCE_POINTS_SHORT = 50;
+export const SENTENCE_POINTS_MEDIUM = 75;
+export const SENTENCE_POINTS_LONG = 100;
+
+export const SHOP_PRICE_TIER_1 = 100;
+export const SHOP_PRICE_TIER_2 = 150;
+export const SHOP_PRICE_TIER_3 = 200;
+export const SHOP_PRICE_TIER_4 = 250;
+export const SHOP_PRICE_TIER_5 = 300;
+export const SHOP_PRICE_TIER_6 = 400;
+
+export const STORAGE_PROFILE_KEY = 'kanji-battle:profile';
