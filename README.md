@@ -15,7 +15,7 @@ project is compiled as a single package and served via GitHub Pages.
 - **[Mermaid Editor](/spa/src/mermaid-editor/)** — Live client-side Mermaid diagram editor with theme selection and export.
 - **[Warhammer Pairing Solver](/spa/src/warhammer-pairing/)** — Optimal pairing-strategy solver for WTC/ETC-style 8v8 Warhammer team drafts. Treats the tournament draft as a zero-sum extensive-form game solved via backward induction and nested linear programming. Features direct spreadsheet copy-paste (Excel/Google Sheets), Nash equilibrium calculations, pure-maximin recommendations with exploitability gaps, and an interactive at-the-table live draft assistant.
 - **[Kanji Battle](/spa/src/kanji-battle/)** — Interactive Japanese kanji stroke handwriting practice and battle game.
-- **[Agent Host Protocol UI](/spa/src/agent-host-protocol-ui/)** — Client-side web UI for services implementing the Agent Host Protocol (AHP), inspired by the VS Code Agents view. Directly connects over WebSocket to manage agent sessions, inspect streaming reasoning, and approve tool calls.
+- **[Agent Host Protocol UI](/spa/src/agent-host-protocol-ui/)** — Client-side web UI for services implementing the Agent Host Protocol (AHP), inspired by the VS Code Agents view. Directly connects over WebSocket to manage agent sessions, inspect streaming reasoning, and approve tool calls. Supports multiple AHP hosts with a passphrase-encrypted settings vault.
 
 ## Requirements
 

@@ -21,7 +21,7 @@
   "license": "ISC",
   "homepage": "https://toumorokoshi.github.io/spa/",
   "dependencies": {
-    "@toumorokoshi/agent-host-protocol-ui": "^0.1.0",
+    "@toumorokoshi/agent-host-protocol-ui": "^0.2.0",
     "marked": "^18.0.3",
     "mermaid": "^11.17.2",
     "preact": "^10.25.4",

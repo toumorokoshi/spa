@@ -6,15 +6,15 @@ The SPA is sourced from the npm package [`@toumorokoshi/agent-host-protocol-ui`]
 
 ## Usage
 
-1. Open `/spa/src/agent-host-protocol-ui/`.
-2. Connect to an AHP-compliant host via WebSocket (e.g. `ws://127.0.0.1:63877` or with connection token query parameter `?host=ws://...`).
+1. Open `/spa/src/agent-host-protocol-ui/`. If a passphrase-protected vault was previously saved in this browser, an unlock modal appears first; enter the master passphrase to restore all settings.
+2. Connect to an AHP-compliant host via WebSocket (e.g. `ws://127.0.0.1:63877` or with connection token query parameter `?host=ws://...`). Multiple hosts can be configured, and the New Session dialog selects which host to launch a session on.
 3. Manage sessions in the left sidebar (create, switch, archive, or delete sessions).
 4. Send prompts, steer turns mid-flight, or enqueue follow-up turns.
 5. Review streaming assistant responses, collapsible reasoning traces, and interactive tool call approval cards.
 
 ## Offline and Local-Only Characteristics
 
-- Completely client-side: all communication is strictly between the browser and the target WebSocket host configured by the user.
+- Completely client-side: all communication is strictly between the browser and the target WebSocket host configured by the user. Host configurations, tokens, and session settings persisted in `localStorage` are encrypted with AES-256-GCM under a user passphrase (or an ephemeral in-memory key).
 - Zero external CDNs or analytics tracking.
 - Pre-built static bundle integrated into the Vite build and served via GitHub Pages under `/spa/src/agent-host-protocol-ui/`.
 
