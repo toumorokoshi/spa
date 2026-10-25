@@ -49,3 +49,8 @@ through `navigator.clipboard.write`. `toClipboardHtml` wraps the HTML in a
 minimal document whose body and wrapper `div` set `background-color:#ffffff`
 and `color:#000000`. Without explicit colors, macOS paste targets showed the
 copied content on a gray background. No other styling is added.
+
+Selecting text in the Rendered HTML box and copying with the keyboard makes the
+browser serialize computed styles, including the box background. The rendered
+HTML box therefore uses a white background (`#fff`); the source text columns
+keep their light gray (`#f9f9f9`).

@@ -58,7 +58,7 @@ export const OutputColumn = ({
           border: '1px solid #eee',
           padding: '12px',
           borderRadius: '4px',
-          backgroundColor: '#f9f9f9',
+          backgroundColor: isHtmlRender ? '#fff' : '#f9f9f9',
           fontFamily: isHtmlRender ? 'inherit' : 'monospace',
           whiteSpace: isHtmlRender ? 'normal' : 'pre-wrap',
           fontSize: '0.95rem'
