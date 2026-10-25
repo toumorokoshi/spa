@@ -9,6 +9,7 @@ import {
   ClipboardDataPayload,
   ConvertedOutputs
 } from './lib/converter';
+import { toClipboardHtml } from './lib/clipboard';
 
 const HEX_RADIX = 16;
 const HEX_PAD_LEN = 4;
@@ -542,7 +543,9 @@ export const App = () => {
 
   const copyRichText = async (html: string) => {
     try {
-      const blobHtml = new Blob([html], { type: 'text/html' });
+      const blobHtml = new Blob([toClipboardHtml(html)], {
+        type: 'text/html'
+      });
       const blobText = new Blob([outputs.plaintext], { type: 'text/plain' });
       await navigator.clipboard.write([
         new ClipboardItem({

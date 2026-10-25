@@ -8,6 +8,7 @@
 - `lib/converter.ts`: Conversion orchestrator exposing `detectFormatDetails` and recording step-by-step `debugSteps` for `convertHtml`, `convertLatex`, and `convertMarkdown`.
 - `lib/dom.ts`: Locates and reads math elements in pasted HTML using the browser's HTML parser.
 - `lib/latex.ts`: Functional translation layer from LaTeX math to MathML and Unicode text.
+- `lib/clipboard.ts`: Prepares rendered HTML for the rich-text clipboard (see "Rich Text Copy").
 
 ## Core Features
 
@@ -40,3 +41,11 @@ Exposes raw inputs (`plainText` and `htmlText`) side-by-side. When HTML is paste
 ### 4. Debug Pipeline Transformation Stages
 
 Every conversion pipeline function (`convertHtml`, `convertLatex`, `convertMarkdown`) records intermediate outputs at each transformation step. The UI renders these stages sequentially in expandable accordion blocks.
+
+### 5. Rich Text Copy
+
+The rendered HTML column's Copy button writes `text/html` and `text/plain`
+through `navigator.clipboard.write`. `toClipboardHtml` wraps the HTML in a
+minimal document whose body and wrapper `div` set `background-color:#ffffff`
+and `color:#000000`. Without explicit colors, macOS paste targets showed the
+copied content on a gray background. No other styling is added.
