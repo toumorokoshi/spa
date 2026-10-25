@@ -68,6 +68,12 @@ just fix            # Auto-fix linting and formatting
 just build          # Production build
 ```
 
+Tests run under jsdom. On Node 25 and newer, `vitest.config.ts` passes
+`--no-experimental-webstorage` to test workers so Node's native `localStorage`
+global does not shadow jsdom's. If an import such as
+`@toumorokoshi/agent-host-protocol-ui` fails to resolve, run `npm ci` to sync
+`node_modules` with `package-lock.json`.
+
 ## Adding a New App
 
 1. Create a new directory under `src/`, e.g. `src/my-app/`.
