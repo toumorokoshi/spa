@@ -1,9 +1,18 @@
+import { copySelectionUnstyled } from '../lib/clipboard';
+
 interface OutputColumnProps {
   title: string;
   content: string;
   onCopy: () => void;
   isHtmlRender?: boolean;
 }
+
+const RenderedHtml = ({ html }: { html: string }) => (
+  <div
+    onCopy={(e) => copySelectionUnstyled(e, window.getSelection())}
+    dangerouslySetInnerHTML={{ __html: html }}
+  />
+);
 
 export const OutputColumn = ({
   title,
@@ -58,17 +67,13 @@ export const OutputColumn = ({
           border: '1px solid #eee',
           padding: '12px',
           borderRadius: '4px',
-          backgroundColor: isHtmlRender ? '#fff' : '#f9f9f9',
+          backgroundColor: isHtmlRender ? 'transparent' : '#f9f9f9',
           fontFamily: isHtmlRender ? 'inherit' : 'monospace',
           whiteSpace: isHtmlRender ? 'normal' : 'pre-wrap',
           fontSize: '0.95rem'
         }}
       >
-        {isHtmlRender ? (
-          <div dangerouslySetInnerHTML={{ __html: content }} />
-        ) : (
-          content
-        )}
+        {isHtmlRender ? <RenderedHtml html={content} /> : content}
       </div>
     </div>
   );

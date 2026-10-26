@@ -1,5 +1,5 @@
 import { render } from '@testing-library/preact';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { OutputColumn } from './OutputColumn';
 
 const contentBox = (container: HTMLElement, text: string) =>
@@ -8,7 +8,7 @@ const contentBox = (container: HTMLElement, text: string) =>
   ) as HTMLElement;
 
 describe('OutputColumn', () => {
-  it('renders HTML on a white background so selections copy without gray', () => {
+  it('renders HTML without a background color', () => {
     const { container } = render(
       <OutputColumn
         title="Rendered HTML"
@@ -18,8 +18,33 @@ describe('OutputColumn', () => {
       />
     );
     expect(contentBox(container, 'Hello').style.backgroundColor).toBe(
-      'rgb(255, 255, 255)'
+      'transparent'
     );
+  });
+
+  it('copies a selection of the rendered HTML without page styling', () => {
+    const { getByText } = render(
+      <OutputColumn
+        title="Rendered HTML"
+        content='<p class="x">Hello</p>'
+        onCopy={() => {}}
+        isHtmlRender
+      />
+    );
+    const paragraph = getByText('Hello');
+    const range = document.createRange();
+    range.selectNode(paragraph);
+    const selection = window.getSelection() as Selection;
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    const setData = vi.fn();
+    const event = new Event('copy', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'clipboardData', { value: { setData } });
+    paragraph.dispatchEvent(event);
+
+    expect(setData).toHaveBeenCalledWith('text/html', '<p>Hello</p>');
+    expect(event.defaultPrevented).toBe(true);
   });
 
   it('keeps the gray background for source text columns', () => {
